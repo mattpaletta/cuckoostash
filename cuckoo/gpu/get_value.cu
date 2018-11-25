@@ -114,6 +114,7 @@ __device__ bool set_helper(Entry key, Entry value) {
     return (replaced_entry == SLOT_EMPTY);
 }
 
+// TODO:// Rewrite without global memory
 __device__ void fetch_value_from_table(int *keys, Entry *values, Entry *results) {
     int thread_index = blockDim.x * blockIdx.x + threadIdx.x + threadIdx.y;
     int key = keys[thread_index];
