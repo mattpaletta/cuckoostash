@@ -123,6 +123,7 @@ class CuckooCpu(object):
             current_location = its % len(self._hash_functions)
             location = locations[current_location]
 
+        # print("Resorting to slots")
         # We didn't find an empty slot, so we need to check the stash.
         slot = self._stash_hash_function(key)
         entry, self._stash_values[slot] = self._stash_values[slot], entry
@@ -133,7 +134,7 @@ if __name__ == "__main__":
 
     num_elements = 100_000
 
-    cuckoo = CuckooCpu(N = int(100_000 * 1.5),
+    cuckoo = CuckooCpu(N = int(num_elements * 3),
                        stash_size = 10,
                        num_hash_functions = 4)
 
