@@ -13,8 +13,8 @@ const int MAX_ITERATIONS = 100;
 
 __constant__ int *hash_functions[4];
 
-__device__ Entry *cuckoo[1000];
-__device__ Entry *stash[101];
+//__global__ Entry *cuckoo[1000];
+//__global__ Entry *stash[101];
 
 #define hash_function_1(entry) 1;
 #define hash_function_2(entry) 1;
@@ -28,7 +28,10 @@ __device__ Entry get_value(Entry entry) {
     return ((unsigned)((entry) & SLOT_EMPTY));
 }
 
-__device__ Entry get_helper(int key) {
+__global__ void fetch(Entry *cuckoo, Entry *stash, int *keys, int *results) {
+    int thread_index = blockDim.x * blockIdx.x + threadIdx.x + threadIdx.y;
+    int key = keys[thread_index];
+
     const Entry kEntryNotFound = SLOT_EMPTY;
 
     // Compute all possible locations for the key.
@@ -37,47 +40,57 @@ __device__ Entry get_helper(int key) {
     unsigned location_3 = hash_function_3(key);
     unsigned location_4 = hash_function_4(key);
 
-    Entry entry = *cuckoo[location_1];
+    Entry entry = cuckoo[location_1];
 
     // Keep checking locations
     // are checked, or if an empty slot is found. Entry entry ;
-    entry = *cuckoo[location_1];
+    entry = cuckoo[location_1];
     int current_key = get_key(entry);
     if (current_key != key) {
         if (current_key == kEntryNotFound) {
-            return kEntryNotFound;
+            results[thread_index] = kEntryNotFound;
+            return;
         }
 
-        entry = *cuckoo[location_2];
+        entry = cuckoo[location_2];
         int current_key = get_key(entry);
 
         if (current_key != key) {
             if (current_key == kEntryNotFound) {
-                return kEntryNotFound;
+                results[thread_index] = kEntryNotFound;
+                return;
             }
 
-            entry = *cuckoo[location_3];
+            entry = cuckoo[location_3];
             int current_key = get_key(entry);
 
             if (current_key != key) {
                 if (current_key == kEntryNotFound) {
-                    return kEntryNotFound;
+                    results[thread_index] = kEntryNotFound;
+                    return;
                 }
 
-                entry = *cuckoo[location_4];
+                entry = cuckoo[location_4];
                 int current_key = get_key(entry);
 
                 if (current_key != key) {
-                    return kEntryNotFound;
+                    results[thread_index] = kEntryNotFound;
+                    return;
                 }
             }
         }
     }
 
-    return get_value(entry);
+    results[thread_index] = get_value(entry);
+
 }
 
-__device__ bool set_helper(Entry key, Entry value) {
+__global__ void set(Entry *cuckoo, Entry *stash, Entry *keys, Entry *values, int *results) {
+    int thread_index = blockDim.x * blockIdx.x + threadIdx.x + threadIdx.y;
+
+    // Load up the key-value pair into a 64-bit entry
+    unsigned key = keys[thread_index];
+    unsigned value = values[thread_index];
     Entry entry = (((Entry) key) << 32) + value;
 
     // Repeat the insertion process while the thread still has an item.
@@ -85,10 +98,11 @@ __device__ bool set_helper(Entry key, Entry value) {
 
     for (int its = 0; its < MAX_ITERATIONS; its++) {
         // Insert the new item and check for an eviction
-        entry = atomicExch(stash[location], entry);
+        entry = atomicExch(&stash[location], entry);
         key = get_key(entry);
         if (key == KEY_EMPTY) {
-            return true;
+            results[thread_index] = 0;
+            return;
         }
 
         // If an item was evicted, figure out where to reinsert the entry.
@@ -110,24 +124,6 @@ __device__ bool set_helper(Entry key, Entry value) {
 
     // Try the stash. It succeeds if the stash slot it needs is empty.
     unsigned slot = stash_hash_function(key);
-    Entry replaced_entry = atomicCAS((unsigned long long *)*stash[slot], SLOT_EMPTY, entry);
-    return (replaced_entry == SLOT_EMPTY);
-}
-
-// TODO:// Rewrite without global memory
-__device__ void fetch_value_from_table(int *keys, Entry *values, Entry *results) {
-    int thread_index = blockDim.x * blockIdx.x + threadIdx.x + threadIdx.y;
-    int key = keys[thread_index];
-
-    results[thread_index] = get_helper(key);
-}
-
-__device__ void set_value_in_table(Entry *keys, Entry *values, bool *results) {
-    int thread_index = blockDim.x * blockIdx.x + threadIdx.x + threadIdx.y;
-
-    // Load up the key-value pair into a 64-bit entry
-    unsigned key = keys[thread_index];
-    unsigned value = values[thread_index];
-
-    results[thread_index] = set_helper(key, value);
+    Entry replaced_entry = atomicCAS((Entry*) &stash[slot], SLOT_EMPTY, entry);
+    results[thread_index] = (int) replaced_entry == SLOT_EMPTY;
 }

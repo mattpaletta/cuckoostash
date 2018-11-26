@@ -1,16 +1,12 @@
 import os
 import random
-import subprocess
-import tempfile
-from difflib import SequenceMatcher
 from typing import List
 
 import numpy as np
 import pyopencl as cl
-import jellyfish
 
 # Inheritance for using thread
-from pyopencl._cl import Kernel
+from coriander.coriander import cu_to_cl
 
 
 class GPUThread(object):
@@ -110,7 +106,10 @@ class GPUThread(object):
         }
         """
 
-        vadd =  self._convert_cu_to_cl()
+        vadd = cu_to_cl(context = self._ctx,
+                        cu_filepath = "get_value.cu",
+                        kernelname = "fetch",
+                        num_args = 4)
         LENGTH = np.uint64(10000)
 
         print("Compilied program")
@@ -130,17 +129,20 @@ class GPUThread(object):
 
         def helper(keys, values = None):
 
-            vadd.set_arg(0, d_a)
-            vadd.set_arg(1, d_b)
-            vadd.set_arg(2, d_c)
+            # vadd.set_arg(0, d_a)
+            # vadd.set_arg(1, d_b)
+            # # vadd.set_arg(2, d_c)
+            #
+            # vadd.set_arg(2, d_r)
+            # vadd.set_args(d_a, d_b, d_r)
 
-            vadd.set_arg(3, d_r)
-            vadd.set_args(d_a, d_b, d_c, d_r)
             print("Setup values")
             # vadd.set_scalar_arg_dtypes([None, None, None, None, np.uint64])
 
             # vadd(self._cl_queue, h_a.shape, None, d_a, d_b, d_c, d_r, np.uint64(LENGTH * 2))
-            print(h_a.shape)
+            # print(h_a.shape)
+            cl.enqueue_copy(self._cl_queue, d_a, d_b, d_c, d_r)
+
             ev = cl.enqueue_nd_range_kernel(self._cl_queue, vadd, h_a.shape, None)
             print("Waiting")
             ev.wait()
@@ -155,131 +157,6 @@ class GPUThread(object):
         # get the kernel function from the compiled module
         for func in ["get", "set"]:
             self._functions.update({func: helper})
-
-    def _convert_cu_to_cl(self):
-        cu_filepath = "get_value.cu"
-        kernelname = "fetch_value_from_table"
-        num_clmems = 3
-
-        ll_sourcecode = self.cu_to_ll(cu_filepath)
-
-        # This is the name of the function in the IR.
-        defines = []
-        for line in ll_sourcecode.split('\n'):
-            if line.startswith("define"):
-                define_mangled_name = line.split('@')[1].split('(')[0]
-                defines.append(define_mangled_name)
-
-        # TODO:// Get closest name when names are subsets of each other.
-        mangled_dist = list(zip(defines, list(map(lambda func: SequenceMatcher(None, func, kernelname, autojunk = False).ratio(), defines))))
-        mangled_dist.sort(key = lambda x: x[1])
-
-        mangledname = mangled_dist[-1][0] # Grab the minimum one, and from there, grab the name.
-        print(mangled_dist)
-
-        assert mangledname is not None, "Could not find function: " + kernelname
-
-        print('mangledname', mangledname)
-
-        # Count the number of arguments to function...
-        cl_code = self.cu_to_cl(cu_filepath, mangledname, num_clmems = num_clmems)
-        print('got cl_code')
-
-        # print(cl_code)
-
-        kernel = self.build_kernel(self._ctx, cl_code, mangledname)
-        print('after build kernel')
-        return kernel
-
-    def _get_cocl_path(self):
-        cocl_path = os.path.expanduser("~/coriander/bin/cocl_py")
-        assert os.path.exists(cocl_path), "coriander must be installed"
-        return cocl_path
-
-    def cu_to_ll(self, cu_source_file):
-        env = os.environ
-        env['COCL_BIN'] = 'build'
-        env['COCL_LIB'] = 'build'
-
-        cocl_path = self._get_cocl_path()
-
-        new_file, filename = tempfile.mkstemp()
-        os.close(new_file)
-        print(filename)
-
-        device_ll = filename + "-device.ll"
-
-        self.run_process([
-            'bash',
-            cocl_path,
-            '-c',
-            cu_source_file,
-            '-o',
-            filename
-        ], env = env)
-
-        with open(device_ll, "r") as f:
-            ll_sourcecode = "\n".join(f.readlines())
-        # os.remove(filename)
-        return ll_sourcecode
-
-    def cu_to_cl(self, cu_source_file, kernelName, num_clmems):
-        clmemIndexes = ','.join(map(str, range(num_clmems)))
-
-        cocl_path = self._get_cocl_path()
-
-        new_file, filename = tempfile.mkstemp()
-        os.close(new_file)
-        print(filename)
-
-        device_ll = filename + "-device.ll"
-        device_cl = filename + "-device.cl"
-
-        env = os.environ
-        # env['COCL_BIN'] = 'build'
-        # env['COCL_LIB'] = 'build'
-        self.run_process([
-            'bash',
-            cocl_path,
-            '-c',
-            cu_source_file,
-            '-o',
-            filename
-        ], env = env)
-
-        self.run_process([
-            '/tmp/coriander/build/ir-to-opencl',
-            '--inputfile', device_ll,
-            '--outputfile', device_cl,
-            '--kernelname', kernelName,
-            '--cmem-indexes', clmemIndexes,
-            '--add_ir_to_cl'
-        ])
-
-        with open(device_cl, 'r') as f:
-            cl_sourcecode = "\n".join(f.readlines())
-        # os.remove(filename)
-        return cl_sourcecode
-
-    def build_kernel(self, context, cl_sourcecode, kernelName):
-        print('building sourcecode')
-        print('cl_sourcecode', cl_sourcecode)
-        prog = cl.Program(context, cl_sourcecode).build()
-        print('built prog')
-        for kernel in prog.all_kernels():
-            if kernel.function_name == kernelName:
-                return kernel
-
-    def run_process(self, cmdline_list, cwd = None, env = None):
-        print('running [%s]' % ' '.join(cmdline_list))
-        fout = open('/tmp/pout.txt', 'w')
-        res = subprocess.run(cmdline_list, stdout = fout, stderr = subprocess.STDOUT, cwd = cwd, env = env)
-        fout.close()
-        with open('/tmp/pout.txt', 'r') as f:
-            output = f.read()
-        # print(output)
-        assert res.returncode == 0
-        return output
 
 if __name__ == "__main__":
     # os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
