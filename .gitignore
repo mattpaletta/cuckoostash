@@ -9,6 +9,9 @@ cuckoo/gpu/pycuckoo.cpp
 
 # C extensions
 *.so
+*.a
+*.ll
+*.o
 
 # Distribution / packaging
 .Python

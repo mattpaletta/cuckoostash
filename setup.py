@@ -45,8 +45,11 @@ extensions = Extension("pycuckoo",
                   libraries=["cuckoo"],
                   library_dirs = ["cuckoo/gpu/lib"],
                   include_dirs = ["cuckoo/gpu/lib"],
-                  extra_compile_args=["-mmacosx-version-min=10.13", "-fPIC"],
-                  extra_link_args=["-mmacosx-version-min=10.13", "-fPIC"], )
+                  extra_compile_args=["-mmacosx-version-min=10.13", "-fPIC",
+                                      "-framework", "OpenCL"],
+                  extra_link_args=["-mmacosx-version-min=10.13",
+                                   "-fPIC",
+                                   "-framework", "OpenCL"], )
 
 setup(
     name="cuckoohash",
