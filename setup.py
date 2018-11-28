@@ -1,16 +1,22 @@
-# from Cython.Distutils import build_ext
-# from Cython.Build.Dependencies import default_create_extension
+from Cython.Build import cythonize
+
 import inspect
 from distutils.command.build import build
-from setuptools.command.install import install
+
+from coriander.coriander import cu_to_cl_bin
 
 try:
-    from setuptools import setup, Extension, Command
+    from setuptools import Command, find_packages
 except ImportError:
     import ez_setup
 
     ez_setup.use_setuptools()
-    from setuptools import setup, Extension, find_packages
+    from setuptools import find_packages
+
+
+from distutils.command.install import install
+from distutils.core import setup
+from distutils.extension import Extension
 
 
 class BuildCommand(build):
@@ -33,6 +39,15 @@ class InstallCommand(install):
 #         build_ext.run(self)
 
 
+extensions = Extension("pycuckoo",
+                  ["cuckoo/gpu/pycuckoo.pyx"],
+                  language="c++",
+                  libraries=["cuckoo"],
+                  library_dirs = ["cuckoo/gpu/lib"],
+                  include_dirs = ["cuckoo/gpu/lib"],
+                  extra_compile_args=["-mmacosx-version-min=10.13", "-fPIC"],
+                  extra_link_args=["-mmacosx-version-min=10.13", "-fPIC"], )
+
 setup(
     name="cuckoohash",
     version="0.0.1",
@@ -40,7 +55,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[],
-    setup_requires=[],
+    setup_requires=["pycoriander"],
     author="Matthew Paletta",
     author_email="mattpaletta@gmail.com",
     description="Cuckoo Hash GPU/CPU implementation",
@@ -53,13 +68,7 @@ setup(
         'Programming Language :: Python',
         'Topic :: Communications',
     ],
-    # ext_modules=[
-    #     Extension(name="pycuckoo",
-    #               sources=["cuckoo/gpu/pycuckoo.pyx", "cuckoo/gpu/cuckoo.cpp"],
-    #               language="c++",
-    #               extra_objects=["mtlpp.o"],
-    #               extra_compile_args=[],
-    #               extra_link_args=[], )],
+    ext_modules=cythonize([extensions]),
     cmdclass = {
         # 'build_ext': build_ext,
         'build': BuildCommand,

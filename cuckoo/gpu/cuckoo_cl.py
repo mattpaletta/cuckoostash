@@ -6,12 +6,12 @@ import numpy as np
 import pyopencl as cl
 
 # Inheritance for using thread
-from coriander.coriander import cu_to_cl
-
+# from coriander.coriander import cu_to_cl
 
 class GPUThread(object):
     def __init__(self, number, arr):
         print("Init devices")
+
         # threading.Thread.__init__(self)
         self._number = number
         self._arr = arr

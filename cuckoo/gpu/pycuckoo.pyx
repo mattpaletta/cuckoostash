@@ -1,4 +1,4 @@
-cdef extern from "cuckoo.h" namespace "pycuckoo":
+cdef extern from "cuckoo.h":
     cdef cppclass Cuckoo:
         Cuckoo()
         int set()
@@ -11,5 +11,5 @@ cdef class PyCuckoo:
     def __dealloc__(self):
         del self.thisptr
 
-    def set(self):
-        return self.thisptr.set()
+    def set(self) -> None:
+        self.thisptr.set()
