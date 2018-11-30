@@ -9,8 +9,8 @@ install:
   - pip install . -v
 
 script:
-  # - mypy -m pqdict
-  # - python3 -m unittest discover -v -s test
+  - mypy -m cuckoo
+  - python3 -m unittest discover -v -s test
 
 notifications:
   email:
