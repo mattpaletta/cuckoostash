@@ -57,7 +57,7 @@ setup(
     url='https://github.com/mattpaletta/cuckoohash',
     packages=find_packages(),
     include_package_data=True,
-    install_requires=[],
+    install_requires=["numpy"],
     setup_requires=["pycoriander", "Cython"],
     author="Matthew Paletta",
     author_email="mattpaletta@gmail.com",
