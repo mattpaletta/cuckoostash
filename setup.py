@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 import inspect
 from distutils.command.build import build
 
-from coriander.coriander import cu_to_cl_bin
+# from coriander.coriander import cu_to_cl_bin
 
 try:
     from setuptools import Command, find_packages
@@ -71,7 +71,7 @@ setup(
         'Programming Language :: Python',
         'Topic :: Communications',
     ],
-    ext_modules=cythonize([extensions]),
+    # ext_modules=cythonize([]),
     cmdclass = {
         # 'build_ext': build_ext,
         'build': BuildCommand,
