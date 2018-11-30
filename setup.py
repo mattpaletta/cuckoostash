@@ -58,7 +58,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=["numpy"],
-    setup_requires=["pycoriander", "Cython"],
+    setup_requires=["Cython"], # TODO:// add pycoriander
     author="Matthew Paletta",
     author_email="mattpaletta@gmail.com",
     description="Cuckoo Hash GPU/CPU implementation",

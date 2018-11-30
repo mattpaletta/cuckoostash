@@ -5,7 +5,7 @@ from time import time
 from typing import List
 
 import numpy as np
-from multiprocess.pool import Pool
+from multiprocessing.pool import Pool
 
 KEY_EMPTY = SLOT_EMPTY = 0xffff
 ENTRY_NOT_FOUND = -1
