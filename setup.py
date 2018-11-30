@@ -72,9 +72,9 @@ setup(
         'Topic :: Communications',
     ],
     # ext_modules=cythonize([]),
-    cmdclass = {
-        # 'build_ext': build_ext,
-        'build': BuildCommand,
-        'install': InstallCommand
-    }
+    # cmdclass = {
+    #     # 'build_ext': build_ext,
+    #     'build': BuildCommand,
+    #     'install': InstallCommand
+    # }
 )
