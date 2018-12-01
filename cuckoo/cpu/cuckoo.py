@@ -2,13 +2,13 @@ import random
 from math import log
 from os import cpu_count
 from time import time
-from typing import List
+from typing import List, Union
 
 import numpy as np
-from multiprocessing.pool import Pool
+from multiprocess.pool import Pool
 
-KEY_EMPTY = SLOT_EMPTY = 0xffff
-ENTRY_NOT_FOUND = -1
+ENTRY_NOT_FOUND = KEY_EMPTY = SLOT_EMPTY = 0xffff
+
 
 
 g_pool = Pool(processes = cpu_count() - 1)
@@ -80,7 +80,6 @@ class CuckooCpu(object):
 
         for location in locations:
             entry = self._cuckoo_values[location]
-            # print(key, entry)
             if self._get_key(entry) != key:
                 if self._get_key(entry) == KEY_EMPTY:
                     return ENTRY_NOT_FOUND
@@ -98,9 +97,17 @@ class CuckooCpu(object):
     def _get_all_locations(self, key: int):
         return list(map(lambda f: f(key), self._hash_functions))
 
-    def set(self, keys: List[int], values: List[np.uint64]):
-        # These would be all parallel if CUDA implementation
+    def set(self, key: Union[int, List[int]], value: Union[np.uint64, List[np.uint64]]):
+        if type(key) == int:
+            return self.set_single(key, value)
+        elif type(key) == list:
+            return self.set_multiple(key, value)
 
+    def set_single(self, key: int, value: np.uint64):
+        return self.set_multiple(keys = [key], values = [value])
+
+    def set_multiple(self, keys: List[int], values: List[np.uint64]):
+        # These would be all parallel if CUDA implementation
         def helper(thread_index):
             key = keys[thread_index]
             value = values[thread_index]
