@@ -7,11 +7,11 @@ from typing import List, Union
 import numpy as np
 from multiprocess.pool import Pool
 
-ENTRY_NOT_FOUND = KEY_EMPTY = SLOT_EMPTY = 0xffff
-
+ENTRY_NOT_FOUND = KEY_EMPTY = SLOT_EMPTY = [0xffffffff, 0]
 
 
 g_pool = Pool(processes = cpu_count() - 1)
+
 
 class CuckooCpu(object):
     def __init__(self, N: int, stash_size = 10, num_hash_functions = 4, num_parallel = cpu_count() - 1):
@@ -81,14 +81,14 @@ class CuckooCpu(object):
         for location in locations:
             entry = self._cuckoo_values[location]
             if self._get_key(entry) != key:
-                if self._get_key(entry) == KEY_EMPTY:
+                if self._get_key(entry) in KEY_EMPTY:
                     return ENTRY_NOT_FOUND
             else:
                 break
 
         return self._get_value(entry)
 
-    def _get_key(self, entry: int):
+    def _get_key(self, entry: np.uint64):
         return np.uint64(entry >> 32)
 
     def _get_value(self, entry: int):
@@ -113,28 +113,35 @@ class CuckooCpu(object):
             value = values[thread_index]
             did_insert = self._set_helper(key, value)
             return did_insert
-        return g_pool.map(helper, range(len(keys)), chunksize = 10)
+        #return g_pool.map(helper, range(len(keys)), chunksize = 10)
+        # TODO:// Revert to parallel implementation.
+        output = []
+        for i in range(len(keys)):
+            output.append(helper(i))
+        return output
 
     def _set_helper(self, key: int, value: np.uint64) -> bool:
-        location = self._hash_functions[0](key)
         entry = np.uint64(key << 32) + np.uint64(value)
 
+        location_var = 0
+        location = self._hash_functions[location_var](key)
         for its in range(self._max_size_chaining):
             entry, self._cuckoo_values[location] = self._cuckoo_values[location], entry
             key = self._get_key(entry)
 
-            if key == KEY_EMPTY:
+            if key in KEY_EMPTY:
                 return True
 
-            locations = list(map(lambda f: f(key), self._hash_functions))
-            current_location = its % len(self._hash_functions)
-            location = locations[current_location]
+            locations = self._get_all_locations(key)
+            location_var = (location_var + 1) % len(self._hash_functions)
+
+            location = locations[location_var]
 
         # print("Resorting to slots")
         # We didn't find an empty slot, so we need to check the stash.
         slot = self._stash_hash_function(key)
         entry, self._stash_values[slot] = self._stash_values[slot], entry
-        return entry == SLOT_EMPTY
+        return entry in SLOT_EMPTY
 
 
 if __name__ == "__main__":

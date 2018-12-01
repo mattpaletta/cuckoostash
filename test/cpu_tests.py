@@ -10,7 +10,7 @@ MOUSE = 3
 
 class TestCPU(TestCase):
     def setUp(self):
-        self._cuckoo = CuckooCpu(N = 100)
+        self._cuckoo = CuckooCpu(N = 4)
 
     def test_get(self):
         assert self._cuckoo.get(key = CAT) == ENTRY_NOT_FOUND, "Get on an empty list should be -1 (not found)"
