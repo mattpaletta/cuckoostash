@@ -1,19 +1,19 @@
 import random
 from math import log
 from os import cpu_count
-from time import time
 from typing import List, Union
 
 import numpy as np
 from multiprocess.pool import Pool
 
-ENTRY_NOT_FOUND = KEY_EMPTY = SLOT_EMPTY = [0xffffffff, 0]
-
-
-g_pool = Pool(processes = cpu_count() - 1)
+KEY_EMPTY = SLOT_EMPTY = [0xffffffff, 0]
+ENTRY_NOT_FOUND = -1
 
 
 class CuckooCpu(object):
+    __slots__ = ["_max_size_chaining", "_cuckoo_values", "_stash_values", "_hash_functions",
+                 "_stash_hash_function", "_num_processes"]
+
     def __init__(self, N: int, stash_size = 10, num_hash_functions = 4, num_parallel = cpu_count() - 1):
         if N <= 0:
             raise RuntimeError("N must be > 0")
@@ -31,8 +31,108 @@ class CuckooCpu(object):
         self._hash_functions = self._get_all_hash_tables(_full_table_size, num_hash_functions)
         self._stash_hash_function = self._get_stash_function(_stash_size)
 
-        global g_pool
-        g_pool = Pool(processes = num_parallel)
+        self._num_processes = num_parallel
+
+        # global g_pool
+        # g_pool = Pool(processes = self._num_processes)
+
+    def get_multiple(self, keys: List[int]):
+        def helper(thread_index):
+            key = keys[thread_index]
+            return self._get_helper(key)
+
+        return self._run_parallel(helper = helper,
+                                  num_threads = len(keys))
+
+    def get_single(self, key: int):
+        return self._get_helper(key)
+
+    def set(self, key: Union[int, List[int]], value: Union[np.uint64, List[np.uint64]]):
+        if type(key) == int:
+            return self.set_single(key, value)
+        elif type(key) == list:
+            return self.set_multiple(key, value)
+        else:
+            raise TypeError("Key must be int or List[int]")
+
+    def set_single(self, key: int, value: np.uint64):
+        return self.set_multiple(keys = [key], values = [value])
+
+    def set_multiple(self, keys: List[int], values: List[np.uint64]):
+        # These would be all parallel if CUDA implementation
+        def helper(thread_index):
+            key = keys[thread_index]
+            value = values[thread_index]
+            did_insert = self._set_helper(key, value)
+            return did_insert
+
+        return self._run_parallel(helper = helper,
+                                  num_threads = len(keys))
+
+    def _run_parallel(self, helper, num_threads):
+        thread_ids = range(num_threads)
+        if self._num_processes <= 1:
+            output = []
+            for i in thread_ids:
+                output.append(helper(i))
+            return output
+        else:
+            g_pool = Pool(processes = self._num_processes)
+            return g_pool.map(helper, thread_ids, chunksize = 10)
+
+    def get(self, key: int):
+        if type(key) == int:
+            return self.get_single(key)
+        elif type(key) == list:
+            return self.get_multiple(key)
+        else:
+            raise TypeError("Key must be int or List[int]")
+
+    def _get_helper(self, key: int):
+        locations = self._get_all_locations(key)
+        entry = self._cuckoo_values[locations[0]]
+
+        for location in locations:
+            entry = self._cuckoo_values[location]
+            if self._get_key(entry) == key:
+                break
+            elif self._get_key(entry) in KEY_EMPTY:
+                return ENTRY_NOT_FOUND
+
+        return self._get_value(entry)
+
+    def _set_helper(self, key: int, value: np.uint64) -> bool:
+        entry = np.uint64(key << 32) + np.uint64(value)
+
+        location_var = 0
+        location = self._hash_functions[location_var](key)
+        for its in range(self._max_size_chaining):
+            entry, self._cuckoo_values[location] = self._cuckoo_values[location], entry
+            key = self._get_key(entry)
+
+            if key in KEY_EMPTY:
+                return True
+
+            locations = self._get_all_locations(key)
+            location_var = (location_var + 1) % len(self._hash_functions)
+
+            location = locations[location_var]
+
+        # print("Resorting to slots")
+        # We didn't find an empty slot, so we need to check the stash.
+        slot = self._stash_hash_function(key)
+        entry, self._stash_values[slot] = self._stash_values[slot], entry
+        return entry in SLOT_EMPTY
+
+    # Helper Functions
+    def _get_key(self, entry: np.uint64):
+        return np.uint64(entry >> 32)
+
+    def _get_value(self, entry: int):
+        return np.uint64(entry & 0xffffffff)
+
+    def _get_all_locations(self, key: int):
+        return list(map(lambda f: f(key), self._hash_functions))
 
     def _get_all_hash_tables(self, table_size: int, num_hash_functions: int):
         p = 4_294_967_291
@@ -70,101 +170,3 @@ class CuckooCpu(object):
             return xor
         else:
             raise NotImplementedError("Invalid hash function: " + str(function))
-
-    def get_multiple(self, keys: List[int]):
-        return g_pool.map(self.get, keys, chunksize = 10)
-
-    def get(self, key: int):
-        locations = self._get_all_locations(key)
-        entry = self._cuckoo_values[locations[0]]
-
-        for location in locations:
-            entry = self._cuckoo_values[location]
-            if self._get_key(entry) != key:
-                if self._get_key(entry) in KEY_EMPTY:
-                    return ENTRY_NOT_FOUND
-            else:
-                break
-
-        return self._get_value(entry)
-
-    def _get_key(self, entry: np.uint64):
-        return np.uint64(entry >> 32)
-
-    def _get_value(self, entry: int):
-        return np.uint64(entry & 0xffffffff)
-
-    def _get_all_locations(self, key: int):
-        return list(map(lambda f: f(key), self._hash_functions))
-
-    def set(self, key: Union[int, List[int]], value: Union[np.uint64, List[np.uint64]]):
-        if type(key) == int:
-            return self.set_single(key, value)
-        elif type(key) == list:
-            return self.set_multiple(key, value)
-
-    def set_single(self, key: int, value: np.uint64):
-        return self.set_multiple(keys = [key], values = [value])
-
-    def set_multiple(self, keys: List[int], values: List[np.uint64]):
-        # These would be all parallel if CUDA implementation
-        def helper(thread_index):
-            key = keys[thread_index]
-            value = values[thread_index]
-            did_insert = self._set_helper(key, value)
-            return did_insert
-        #return g_pool.map(helper, range(len(keys)), chunksize = 10)
-        # TODO:// Revert to parallel implementation.
-        output = []
-        for i in range(len(keys)):
-            output.append(helper(i))
-        return output
-
-    def _set_helper(self, key: int, value: np.uint64) -> bool:
-        entry = np.uint64(key << 32) + np.uint64(value)
-
-        location_var = 0
-        location = self._hash_functions[location_var](key)
-        for its in range(self._max_size_chaining):
-            entry, self._cuckoo_values[location] = self._cuckoo_values[location], entry
-            key = self._get_key(entry)
-
-            if key in KEY_EMPTY:
-                return True
-
-            locations = self._get_all_locations(key)
-            location_var = (location_var + 1) % len(self._hash_functions)
-
-            location = locations[location_var]
-
-        # print("Resorting to slots")
-        # We didn't find an empty slot, so we need to check the stash.
-        slot = self._stash_hash_function(key)
-        entry, self._stash_values[slot] = self._stash_values[slot], entry
-        return entry in SLOT_EMPTY
-
-
-if __name__ == "__main__":
-
-    num_elements = 100_000
-
-    cuckoo = CuckooCpu(N = int(num_elements * 3),
-                       stash_size = 10,
-                       num_hash_functions = 4)
-
-    keys = list(range(num_elements + 1))
-    values = list(map(lambda x: x + 100, keys))
-
-    print("Running set")
-    start = time()
-    cuckoo.set(keys, values)
-    end = time()
-    print("Finished set")
-    print(end - start)
-
-    print("Running get")
-    start1 = time()
-    cuckoo.get_multiple(keys)
-    end1 = time()
-    print("Finished get")
-    print(end1 - start1)

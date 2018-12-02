@@ -25,7 +25,7 @@ class GPUThread(object):
         self._get_cuda_functions()
 
     def get(self, keys):
-        return self._run_function("get", keys)
+        return self._run_function("_get_helper", keys)
 
     def set(self, keys, values):
         return self._run_function("set", keys, values)
@@ -101,7 +101,7 @@ class GPUThread(object):
         CUCKOO_SIZE = 4000
         STASH_SIZE = 101
 
-        # get the kernel code from the template
+        # _get_helper the kernel code from the template
         with open("cuckoo/gpu/get_value.cu", "r") as f:
             kernel_code_template = "\n".join(f.readlines())
 
@@ -119,8 +119,8 @@ class GPUThread(object):
         # # create empty gpu array for the result (C = A * B)
         # c_gpu = gpuarray.empty((MATRIX_SIZE, MATRIX_SIZE), np.float32)
 
-        # get the kernel function from the compiled module
-        for func in ["get", "set"]:
+        # _get_helper the kernel function from the compiled module
+        for func in ["_get_helper", "set"]:
             self._functions.update({func: mod.get_function(func)})
 
     # def matmul(self, a_gpu, b_gpu, MATRIX_SIZE = MATRIX_SIZE):

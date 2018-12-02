@@ -28,7 +28,7 @@ class GPUThread(object):
         self._get_cuda_functions()
 
     def get(self, keys):
-        return self._run_function("get", keys)
+        return self._run_function("_get_helper", keys)
 
     def set(self, keys, values):
         return self._run_function("set", keys, values)
@@ -154,8 +154,8 @@ class GPUThread(object):
             print(sum(h_r) // 2)
             return h_r
 
-        # get the kernel function from the compiled module
-        for func in ["get", "set"]:
+        # _get_helper the kernel function from the compiled module
+        for func in ["_get_helper", "set"]:
             self._functions.update({func: helper})
 
 if __name__ == "__main__":

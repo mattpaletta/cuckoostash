@@ -10,7 +10,7 @@ MOUSE = 3
 
 class TestCPU(TestCase):
     def setUp(self):
-        self._cuckoo = CuckooCpu(N = 4)
+        self._cuckoo = CuckooCpu(N = 4, num_parallel = 1)
 
     def test_get(self):
         assert self._cuckoo.get(key = CAT) == ENTRY_NOT_FOUND, "Get on an empty list should be -1 (not found)"
@@ -41,3 +41,19 @@ class TestCPU(TestCase):
         for k, v, s in zip(keys, values, success):
             if s:
                 assert self._cuckoo.get(k) == v, "All the successes should be there!"
+
+    def test_big(self):
+        num_elements = 1_000
+
+        cuckoo = CuckooCpu(N = int(num_elements * 3),
+                           stash_size = 10,
+                           num_hash_functions = 4,  num_parallel = 1)
+
+        keys = list(range(num_elements))
+        values = list(map(lambda x: x + 100, keys))
+
+        did_enter = cuckoo.set(keys, values)
+        num_did_enter = sum(map(int, did_enter))
+        assert num_did_enter == num_elements, "Failed to insert all values."
+
+        result = cuckoo.get_multiple(keys)
