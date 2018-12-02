@@ -4,7 +4,7 @@ from os import cpu_count
 from typing import List, Union
 
 import numpy as np
-from multiprocess.pool import Pool
+from multiprocessing.pool import Pool
 
 KEY_EMPTY = SLOT_EMPTY = [0xffffffff, 0]
 ENTRY_NOT_FOUND = -1
