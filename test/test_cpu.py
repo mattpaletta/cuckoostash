@@ -10,7 +10,7 @@ MOUSE = 3
 
 class TestCPU(TestCase):
     def setUp(self):
-        self._cuckoo = CuckooCpu(N = 4, num_parallel = 1)
+        self._cuckoo = CuckooCpu(N = 4, parallel = False)
 
     def test_get(self):
         assert self._cuckoo.get(key = CAT) == ENTRY_NOT_FOUND, "Get on an empty list should be -1 (not found)"
@@ -47,7 +47,7 @@ class TestCPU(TestCase):
 
         cuckoo = CuckooCpu(N = int(num_elements * 3),
                            stash_size = 10,
-                           num_hash_functions = 4,  num_parallel = 1)
+                           num_hash_functions = 4, parallel = True)
 
         keys = list(range(num_elements))
         values = list(map(lambda x: x + 100, keys))

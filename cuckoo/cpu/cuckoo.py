@@ -1,10 +1,9 @@
 import random
 from math import log
-from os import cpu_count
 from typing import List, Union
 
 import numpy as np
-from multiprocessing.pool import Pool
+from numba import prange, jit
 
 KEY_EMPTY = SLOT_EMPTY = [0xffffffff, 0]
 ENTRY_NOT_FOUND = -1
@@ -12,9 +11,9 @@ ENTRY_NOT_FOUND = -1
 
 class CuckooCpu(object):
     __slots__ = ["_max_size_chaining", "_cuckoo_values", "_stash_values", "_hash_functions",
-                 "_stash_hash_function", "_num_processes"]
+                 "_stash_hash_function", "_allow_parallel"]
 
-    def __init__(self, N: int, stash_size = 10, num_hash_functions = 4, num_parallel = cpu_count() - 1):
+    def __init__(self, N: int, stash_size = 10, num_hash_functions = 4, parallel = True):
         if N <= 0:
             raise RuntimeError("N must be > 0")
         if num_hash_functions <= 0:
@@ -31,12 +30,10 @@ class CuckooCpu(object):
         self._hash_functions = self._get_all_hash_tables(_full_table_size, num_hash_functions)
         self._stash_hash_function = self._get_stash_function(_stash_size)
 
-        self._num_processes = num_parallel
-
-        # global g_pool
-        # g_pool = Pool(processes = self._num_processes)
+        self._allow_parallel = True
 
     def get_multiple(self, keys: List[int]):
+        @jit(nogil = True, cache = True)
         def helper(thread_index):
             key = keys[thread_index]
             return self._get_helper(key)
@@ -60,6 +57,8 @@ class CuckooCpu(object):
 
     def set_multiple(self, keys: List[int], values: List[np.uint64]):
         # These would be all parallel if CUDA implementation
+
+        @jit(nogil = True, cache = True)
         def helper(thread_index):
             key = keys[thread_index]
             value = values[thread_index]
@@ -70,15 +69,15 @@ class CuckooCpu(object):
                                   num_threads = len(keys))
 
     def _run_parallel(self, helper, num_threads):
-        thread_ids = range(num_threads)
-        if self._num_processes <= 1:
-            output = []
-            for i in thread_ids:
-                output.append(helper(i))
-            return output
+        if self._allow_parallel:
+            thread_ids = prange(num_threads)
         else:
-            g_pool = Pool(processes = self._num_processes)
-            return g_pool.map(helper, thread_ids, chunksize = 10)
+            thread_ids = range(num_threads)
+
+        output = []
+        for i in thread_ids:
+            output.append(helper(i))
+        return output
 
     def get(self, key: int):
         if type(key) == int:
@@ -88,6 +87,7 @@ class CuckooCpu(object):
         else:
             raise TypeError("Key must be int or List[int]")
 
+    @jit(nogil = True, cache = True)
     def _get_helper(self, key: int):
         locations = self._get_all_locations(key)
         entry = self._cuckoo_values[locations[0]]
@@ -101,6 +101,7 @@ class CuckooCpu(object):
 
         return self._get_value(entry)
 
+    @jit(nogil = True, cache = True)
     def _set_helper(self, key: int, value: np.uint64) -> bool:
         entry = np.uint64(key << 32) + np.uint64(value)
 
