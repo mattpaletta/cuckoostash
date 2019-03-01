@@ -13,10 +13,8 @@ __global__ void setValue(float *data, int idx, float value) {
     }
 }
 
-// Default constructor
 Cuckoo::Cuckoo () {}
 
-// Destructor
 Cuckoo::~Cuckoo () {}
 
 // Run test on Cuda

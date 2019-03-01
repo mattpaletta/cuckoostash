@@ -3,8 +3,6 @@
 import inspect
 from distutils.command.build import build
 
-# from coriander.coriander import cu_to_cl_bin
-
 try:
     from setuptools import Command, find_packages
 except ImportError:
@@ -38,18 +36,14 @@ class InstallCommand(install):
 #         print("Running build ext")
 #         build_ext.run(self)
 
-
 extensions = Extension("pycuckoo",
                   ["cuckoo/gpu/pycuckoo.pyx"],
                   language="c++",
                   libraries=["cuckoo"],
                   library_dirs = ["cuckoo/gpu/lib"],
                   include_dirs = ["cuckoo/gpu/lib"],
-                  extra_compile_args=["-mmacosx-version-min=10.13", "-fPIC",
-                                      "-framework", "OpenCL"],
-                  extra_link_args=["-mmacosx-version-min=10.13",
-                                   "-fPIC",
-                                   "-framework", "OpenCL"], )
+                  extra_compile_args=[],
+                  extra_link_args=[], )
 
 setup(
     name="cuckoohash",

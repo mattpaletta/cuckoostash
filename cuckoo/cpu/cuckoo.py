@@ -30,7 +30,7 @@ class CuckooCpu(object):
         self._hash_functions = self._get_all_hash_tables(_full_table_size, num_hash_functions)
         self._stash_hash_function = self._get_stash_function(_stash_size)
 
-        self._allow_parallel = True
+        self._allow_parallel = parallel
 
     def get_multiple(self, keys: List[int]):
         @jit(nogil = True, cache = True)

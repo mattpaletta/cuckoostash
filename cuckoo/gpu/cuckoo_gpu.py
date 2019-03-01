@@ -123,21 +123,6 @@ class GPUThread(object):
         for func in ["_get_helper", "set"]:
             self._functions.update({func: mod.get_function(func)})
 
-    # def matmul(self, a_gpu, b_gpu, MATRIX_SIZE = MATRIX_SIZE):
-    #
-    #     # call the kernel on the card
-    #     matrixmul(
-    #             # inputs
-    #             a_gpu, b_gpu,
-    #             # output
-    #             c_gpu,
-    #             # grid of multiple blocks
-    #             grid = (MATRIX_SIZE // TILE_SIZE, MATRIX_SIZE // TILE_SIZE),
-    #             # block of multiple threads
-    #             block = (TILE_SIZE, TILE_SIZE, 1),
-    #     )
-    #
-    #     return c_gpu
 
 if __name__ == "__main__":
     num = cuda.Device.count()
