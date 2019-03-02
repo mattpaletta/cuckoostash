@@ -26,12 +26,11 @@ private:
     std::function<unsigned long(Entry)> get_stash_function(int);
 
     std::function<unsigned long(Entry)> get_next_hash_function(const long, const long, const long, const long, const std::string);
-    Entry get_value(Entry entry);
 
 public:
     Cuckoo(unsigned int, int, int);
     Entry get(Entry key);
-    void set(Entry key, Entry value);
+    bool set(Entry key, Entry value);
 };
 
 #endif

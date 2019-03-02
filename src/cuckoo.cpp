@@ -5,6 +5,7 @@
 #include <random>
 
 #define get_key(entry) ((unsigned) ((entry) >> 32))
+#define get_value(entry) (entry & KEY_EMPTY)
 
 Cuckoo::Cuckoo(unsigned int N, int stash_size, int num_hash_functions) {
     auto full_table_size = (N * 1.25) + 1;
@@ -85,13 +86,9 @@ Entry Cuckoo::get(Entry key) {
     return get_value(entry);
 }
 
-Entry Cuckoo::get_value(Entry entry) {
-    return entry & KEY_EMPTY;
-}
-
-void Cuckoo::set(Entry key, Entry value) {
+bool Cuckoo::set(Entry key, Entry value) {
     Entry entry = (key << 32) + value;
-    long location = this->hash_functions.at(0)(key);
+    long location = (long) this->hash_functions.at(0)(key);
 
     for (int i = 0; i < this->max_size_chaining; i++) {
         auto temp = entry;
@@ -100,7 +97,7 @@ void Cuckoo::set(Entry key, Entry value) {
         auto curr_key = get_key(entry);
 
         if (curr_key == KEY_EMPTY) {
-            return;
+            return true;
         }
 
         for (int j = 0; j < this->hash_functions.size(); j++) {
@@ -115,6 +112,8 @@ void Cuckoo::set(Entry key, Entry value) {
     if (this->stash_values.at(slot) == KEY_EMPTY) {
         this->stash_values.at(slot) = entry;
     }
+
+    return (slot == KEY_EMPTY);
 }
 
 
