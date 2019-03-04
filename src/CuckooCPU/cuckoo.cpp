@@ -3,6 +3,8 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <iostream>
+#include <boost/filesystem.hpp>
 
 #define get_key(entry) ((unsigned) ((entry) >> 32))
 #define get_value(entry) (entry & KEY_EMPTY)
@@ -120,6 +122,55 @@ bool Cuckoo::set(Entry key, Entry value) {
     return (slot == KEY_EMPTY);
 }
 
+
+using namespace boost::filesystem;
+
+std::string get_last(const std::string &str) {
+    if (str.length() <= 1) {
+        return str;
+    }
+    return str.substr(str.length() - 2, str.length() - 1);
+}
+
+std::string make_path(std::vector<std::string> path_pieces) {
+    std::string output;
+
+    for (const auto &v : path_pieces) {
+        if (get_last(v) == "/") {
+            output += v;
+        } else {
+            output += (v + "/");
+        }
+    }
+
+    if (get_last(output) != "/") {
+        output.pop_back();
+    }
+
+    return output;
+}
+
+std::vector<std::string> list_directory(std::string folder_to_read) {
+    path p(folder_to_read);
+
+    std::vector<std::string> outputFiles = {};
+
+    for (auto i = directory_iterator(p); i != directory_iterator(); i++) {
+        if (!is_directory(i->path())) { //we eliminate directories
+            std::string file_name = i->path().filename().string();
+            outputFiles.push_back(make_path({folder_to_read, file_name}));
+        } else {
+            continue;
+        }
+    }
+
+    std::cout << "Found files: " << std::endl;
+    for (const auto &v : outputFiles) {
+        std::cout << v << std::endl;
+    }
+
+    return outputFiles;
+}
 
 
 //__device__ Entry get_value(Entry entry) {
