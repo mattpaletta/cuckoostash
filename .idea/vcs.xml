@@ -2,5 +2,11 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/pybind/pybind-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/pybind/pybind-src/tools/clang" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/temp.macosx-10.14-x86_64-3.7/pybind/pybind-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build/temp.macosx-10.14-x86_64-3.7/pybind/pybind-src/tools/clang" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/pybind/pybind-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/pybind/pybind-src/tools/clang" vcs="Git" />
   </component>
 </project>

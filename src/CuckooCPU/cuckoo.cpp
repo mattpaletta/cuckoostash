@@ -11,10 +11,14 @@ Cuckoo::Cuckoo(unsigned int N, int stash_size, int num_hash_functions) {
     auto full_table_size = (N * 1.25) + 1;
     this->max_size_chaining = (long) (7 * (log(N) / log(2)));
 
-    auto max_stash_size = (long) pow(stash_size, 2) + 1;
+    auto max_stash_size = (unsigned long) pow(stash_size, 2) + 1;
 
     this->cuckoo_values = {};
     this->stash_values = {};
+
+
+    this->cuckoo_values.reserve(N);
+    this->stash_values.reserve(max_stash_size);
 
     std::fill(this->cuckoo_values.begin(),
             this->cuckoo_values.begin() + N,

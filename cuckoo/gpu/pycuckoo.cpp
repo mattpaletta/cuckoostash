@@ -574,7 +574,7 @@ static CYTHON_INLINE void * PyThread_tss_get(Py_tss_t *key) {
 #if defined(WIN32) || defined(MS_WINDOWS)
   #define _USE_MATH_DEFINES
 #endif
-#include <math.h>
+#include <my_math.h>
 #ifdef NAN
 #define __PYX_NAN() ((float) NAN)
 #else
