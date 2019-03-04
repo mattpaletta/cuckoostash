@@ -38,6 +38,7 @@ matrix:
           packages:
             - g++
             - gcc
+            - libboost-dev
           update: true
 
 install:
