@@ -71,18 +71,18 @@ matrix:
           packages:
             - g++-7
       env:
-        - MATRIX_EVAL="CC=which gcc-7 && which CXX=g++-7"
+        - MATRIX_EVAL="CC=which gcc-7 && CXX=which g++-7"
 
 before_install:
   - eval "${MATRIX_EVAL}"
 
 install:
-  - pip install mypy
-  - pip install . -v
+#  - pip install mypy
+  - pip install .
 
-script:
-  - mypy -m cuckoo
-  - python3 -m unittest discover -v -s test
+#script:
+#  - mypy -m cuckoo
+#  - python3 -m unittest discover -v -s test
 
 notifications:
   email:
