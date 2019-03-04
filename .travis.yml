@@ -1,10 +1,12 @@
 language: python
 cache: pip
+sudo: required
 
 python:
   - "3.6"
 
 install:
+  - sudo apt-get update -y && apt-get install -y cmake
   - pip install mypy
   - pip install . -v
 

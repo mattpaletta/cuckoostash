@@ -15,8 +15,6 @@ include_directories(${SOURCE_DIR})
 #    add_subdirectory(python)
 #endif()
 
-find_library("pybind11" REQUIRED)
-
 include(cmake/pybind11.cmake)
 fetch_pybind(
         ${PROJECT_SOURCE_DIR}/cmake

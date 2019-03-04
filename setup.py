@@ -68,52 +68,33 @@ class CMakeBuild(build_ext):
 
 
 setup(
-    name='python_cpp_example',
-    version='0.1',
-    author='Benjamin Jack',
-    author_email='benjamin.r.jack@gmail.com',
-    description='A hybrid Python/C++ test project',
-    long_description='',
-    # tell setuptools to look for any packages under 'src'
-    packages=find_packages('src'),
-    # tell setuptools that all packages will be under the 'src' directory
-    # and nowhere else
-    package_dir={'': 'src'},
-    # add an extension module named 'python_cpp_example' to the package
-    # 'python_cpp_example'
-    ext_modules=[CMakeExtension('example_wrapper/example_wrapper')],
-    # add custom build_ext command
-    cmdclass=dict(build_ext=CMakeBuild),
+    name="cuckoohash",
+    version="0.0.1",
+    url='https://github.com/mattpaletta/cuckoohash',
+    packages=find_packages("src"),
+    package_dir={'cuckoohash': 'src'},
+    # include_package_data=True,
+    install_requires=["numpy", "numba"],
+    setup_requires=["cmake"],
+    author="Matthew Paletta",
+    author_email="mattpaletta@gmail.com",
+    description="Cuckoo Hash GPU/CPU implementation",
+    license="BSD",
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Topic :: Communications',
+    ],
+    ext_modules=[CMakeExtension('cuckoohash/cuckoo')],
+    cmdclass={
+        "build_ext": CMakeBuild,
+    },
     zip_safe=False,
-    package_dat = {"python_cpp_example": "*.so"}
+    # package_data = {
+    #     "cuckoohash/CuckooCPU": "*.so",
+    #     # "cuckoohash/example_wrapper": "example.*.so",
+    # }
 )
-
-
-# setup(
-#     name="cuckoohash",
-#     version="0.0.1",
-#     url='https://github.com/mattpaletta/cuckoohash',
-#     packages=find_packages("src"),
-#     package_dir={'': 'src'},
-#     include_package_data=True,
-#     install_requires=["numpy", "numba"],
-#     setup_requires=["Cython"], # TODO:// add pycoriander
-#     author="Matthew Paletta",
-#     author_email="mattpaletta@gmail.com",
-#     description="Cuckoo Hash GPU/CPU implementation",
-#     license="BSD",
-#     classifiers=[
-#         'Development Status :: 3 - Alpha',
-#         'Intended Audience :: Developers',
-#         'License :: OSI Approved :: BSD License',
-#         'Operating System :: OS Independent',
-#         'Programming Language :: Python',
-#         'Topic :: Communications',
-#     ],
-#     # ext_modules=cythonize([]),
-#     # cmdclass = {
-#     #     # 'build_ext': build_ext,
-#     #     'build': BuildCommand,
-#     #     'install': InstallCommand
-#     # }
-# )
