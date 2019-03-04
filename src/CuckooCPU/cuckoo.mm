@@ -129,69 +129,61 @@ bool Cuckoo::set(Entry key, Entry value) {
 void TestMetal() {
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();
 
-    auto shadersSrc = """
-        #include <metal_stdlib>
-        using namespace metal;
-        kernel void sqr(
-            const device float *vIn [[ buffer(0) ]],
-            device float *vOut [[ buffer(1) ]],
-            uint id[[ thread_position_in_grid ]]) {
-                vOut[id] = vIn[id] * vIn[id];
-            }
-        );
-        """;
+    NSString * shadersSrc = [NSString stringWithFormat:@"#include <metal_stdlib> \
+            using namespace metal; \
+            kernel void sqr( \
+                const device float *vIn [[ buffer(0) ]], \
+                device float *vOut [[ buffer(1) ]], \
+                uint id[[ thread_position_in_grid ]]) { \
+                    vOut[id] = vIn[id] * vIn[id]; \
+                } \
+            } \
+            "];
 
-    auto library = [device newLibraryWithSource:@shadersSrc options: MTLCompileOptions() error:nullptr];
-    assert(library);
+    auto library = [device newLibraryWithSource:shadersSrc options:[ MTLCompileOptions alloc ] error:nullptr];
     auto sqrFunc = [library newFunctionWithName:@"sqr"];
-    assert(sqrFunc);
 
     auto computePipelineState = [device newComputePipelineStateWithFunction:sqrFunc error:nullptr];
-    assert(computePipelineState);
 
-    auto commandQueue = device.newCommandQueue();
-    assert(commandQueue);
+    auto commandQueue = [device newCommandQueue];
 
     const uint32_t dataCount = 6;
 
-    auto inBuffer = [device newBufferWithLength:sizeof(float) * dataCount options:MTLResourceOptions::MTLResourceStorageModeManaged]
-    assert(inBuffer);
+    auto inBuffer = [device newBufferWithLength:sizeof(float) * dataCount options:MTLResourceStorageModeManaged];
 
-    auto outBuffer = [device newBufferWithLength:sizeof(float) * dataCount options:MTLResourceOptions::MTLResourceStorageModeManaged]
-    assert(outBuffer);
+    auto outBuffer = [device newBufferWithLength:sizeof(float) * dataCount options:MTLResourceStorageModeManaged];
 
     for (uint32_t i=0; i<4; i++) {
         // update input data
-        float* inData = static_cast<float*>(inBuffer.GetContents());
-        for (uint32_t j=0; j<dataCount; j++) {
+        auto* inData = static_cast<float*>(inBuffer.contents);
+        for (uint32_t j=0; j < dataCount; j++) {
             inData[j] = 10 * i + j;
         }
-        inBuffer.DidModify(ns::Range(0, sizeof(float) * dataCount));
+        [inBuffer didModifyRange: NSMakeRange(0, sizeof(float) * dataCount)];
     }
-//    mtlpp::CommandBuffer commandBuffer = commandQueue.CommandBuffer();
-//    assert(commandBuffer);
-//
-//    mtlpp::ComputeCommandEncoder commandEncoder = commandBuffer.ComputeCommandEncoder();
-//    commandEncoder.SetBuffer(inBuffer, 0, 0);
-//    commandEncoder.SetBuffer(outBuffer, 0, 1);
-//    commandEncoder.SetComputePipelineState(computePipelineState);
-//    commandEncoder.DispatchThreadgroups(
-//            mtlpp::Size(1, 1, 1),
-//            mtlpp::Size(dataCount, 1, 1));
-//    commandEncoder.EndEncoding();
-//
-//    mtlpp::BlitCommandEncoder blitCommandEncoder = commandBuffer.BlitCommandEncoder();
-//    blitCommandEncoder.Synchronize(outBuffer);
-//    blitCommandEncoder.EndEncoding();
-//
-//    commandBuffer.Commit();
-//    commandBuffer.WaitUntilCompleted();
+
+    auto commandBuffer = [commandQueue commandBuffer];
+    auto commandEncoder = [commandBuffer computeCommandEncoder];
+
+    [commandEncoder setBuffer:inBuffer offset:0 atIndex:0];
+    [commandEncoder setBuffer:outBuffer offset:0 atIndex:1];
+    [commandEncoder setComputePipelineState:computePipelineState];
+    [commandEncoder dispatchThreadgroups:MTLSizeMake(1, 1, 1) threadsPerThreadgroup:MTLSizeMake(dataCount, 1, 1)];
+    [commandEncoder endEncoding];
+
+    auto blitCommandEncoder = [commandBuffer blitCommandEncoder];
+    [blitCommandEncoder synchronizeResource:outBuffer];
+    [blitCommandEncoder endEncoding];
+
+    [commandBuffer commit];
+    [commandBuffer waitUntilCompleted];
 
     // read the data {
-    float* inData = static_cast<float*>(inBuffer.GetContents());
-    float* outData = static_cast<float*>(outBuffer.GetContents());
-    for (uint32_t j=0; j<dataCount; j++)
+    auto* inData = static_cast<float*>(inBuffer.contents);
+    auto* outData = static_cast<float*>(outBuffer.contents);
+    for (uint32_t j=0; j<dataCount; j++) {
         printf("sqr(%g) = %g\n", inData[j], outData[j]);
+    }
 }
 
 //__device__ Entry get_value(Entry entry) {
