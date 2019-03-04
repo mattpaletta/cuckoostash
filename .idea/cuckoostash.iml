@@ -4,6 +4,9 @@
     <facet type="Python" name="Python facet">
       <configuration sdkName="Python 3.7 (cuckoostash)" />
     </facet>
+    <facet type="Python" name="Python facet">
+      <configuration sdkName="Python 3.7 (cuckoostash)" />
+    </facet>
   </component>
   <component name="TestRunnerService">
     <option name="projectConfiguration" value="pytest" />

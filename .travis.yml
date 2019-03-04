@@ -77,7 +77,7 @@ before_install:
   - eval "${MATRIX_EVAL}"
 
 install:
-#  - pip install mypy
+  - pip install mypy cmake --upgrade
   - pip install .
 
 #script:
