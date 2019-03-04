@@ -4,7 +4,11 @@
 #include <cmath>
 #include <random>
 #include <iostream>
-#include <boost/filesystem.hpp>
+
+#ifdef CUCKOO_SUPPORT_METAL
+#include <Metal/Metal.h>
+#include <MetalKit/MetalKit.h>
+#endif
 
 #define get_key(entry) ((unsigned) ((entry) >> 32))
 #define get_value(entry) (entry & KEY_EMPTY)
@@ -122,56 +126,73 @@ bool Cuckoo::set(Entry key, Entry value) {
     return (slot == KEY_EMPTY);
 }
 
+void TestMetal() {
+    id<MTLDevice> device = MTLCreateSystemDefaultDevice();
 
-using namespace boost::filesystem;
+    auto shadersSrc = """
+        #include <metal_stdlib>
+        using namespace metal;
+        kernel void sqr(
+            const device float *vIn [[ buffer(0) ]],
+            device float *vOut [[ buffer(1) ]],
+            uint id[[ thread_position_in_grid ]]) {
+                vOut[id] = vIn[id] * vIn[id];
+            }
+        );
+        """;
 
-std::string get_last(const std::string &str) {
-    if (str.length() <= 1) {
-        return str;
-    }
-    return str.substr(str.length() - 2, str.length() - 1);
-}
+    auto library = [device newLibraryWithSource:@shadersSrc options: MTLCompileOptions() error:nullptr];
+    assert(library);
+    auto sqrFunc = [library newFunctionWithName:@"sqr"];
+    assert(sqrFunc);
 
-std::string make_path(std::vector<std::string> path_pieces) {
-    std::string output;
+    auto computePipelineState = [device newComputePipelineStateWithFunction:sqrFunc error:nullptr];
+    assert(computePipelineState);
 
-    for (const auto &v : path_pieces) {
-        if (get_last(v) == "/") {
-            output += v;
-        } else {
-            output += (v + "/");
+    auto commandQueue = device.newCommandQueue();
+    assert(commandQueue);
+
+    const uint32_t dataCount = 6;
+
+    auto inBuffer = [device newBufferWithLength:sizeof(float) * dataCount options:MTLResourceOptions::MTLResourceStorageModeManaged]
+    assert(inBuffer);
+
+    auto outBuffer = [device newBufferWithLength:sizeof(float) * dataCount options:MTLResourceOptions::MTLResourceStorageModeManaged]
+    assert(outBuffer);
+
+    for (uint32_t i=0; i<4; i++) {
+        // update input data
+        float* inData = static_cast<float*>(inBuffer.GetContents());
+        for (uint32_t j=0; j<dataCount; j++) {
+            inData[j] = 10 * i + j;
         }
+        inBuffer.DidModify(ns::Range(0, sizeof(float) * dataCount));
     }
+//    mtlpp::CommandBuffer commandBuffer = commandQueue.CommandBuffer();
+//    assert(commandBuffer);
+//
+//    mtlpp::ComputeCommandEncoder commandEncoder = commandBuffer.ComputeCommandEncoder();
+//    commandEncoder.SetBuffer(inBuffer, 0, 0);
+//    commandEncoder.SetBuffer(outBuffer, 0, 1);
+//    commandEncoder.SetComputePipelineState(computePipelineState);
+//    commandEncoder.DispatchThreadgroups(
+//            mtlpp::Size(1, 1, 1),
+//            mtlpp::Size(dataCount, 1, 1));
+//    commandEncoder.EndEncoding();
+//
+//    mtlpp::BlitCommandEncoder blitCommandEncoder = commandBuffer.BlitCommandEncoder();
+//    blitCommandEncoder.Synchronize(outBuffer);
+//    blitCommandEncoder.EndEncoding();
+//
+//    commandBuffer.Commit();
+//    commandBuffer.WaitUntilCompleted();
 
-    if (get_last(output) != "/") {
-        output.pop_back();
-    }
-
-    return output;
+    // read the data {
+    float* inData = static_cast<float*>(inBuffer.GetContents());
+    float* outData = static_cast<float*>(outBuffer.GetContents());
+    for (uint32_t j=0; j<dataCount; j++)
+        printf("sqr(%g) = %g\n", inData[j], outData[j]);
 }
-
-std::vector<std::string> list_directory(std::string folder_to_read) {
-    path p(folder_to_read);
-
-    std::vector<std::string> outputFiles = {};
-
-    for (auto i = directory_iterator(p); i != directory_iterator(); i++) {
-        if (!is_directory(i->path())) { //we eliminate directories
-            std::string file_name = i->path().filename().string();
-            outputFiles.push_back(make_path({folder_to_read, file_name}));
-        } else {
-            continue;
-        }
-    }
-
-    std::cout << "Found files: " << std::endl;
-    for (const auto &v : outputFiles) {
-        std::cout << v << std::endl;
-    }
-
-    return outputFiles;
-}
-
 
 //__device__ Entry get_value(Entry entry) {
 //    return ((unsigned)((entry) & SLOT_EMPTY));
