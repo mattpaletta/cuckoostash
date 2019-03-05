@@ -129,19 +129,22 @@ bool Cuckoo::set(Entry key, Entry value) {
 void TestMetal() {
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();
 
-    NSString * shadersSrc = [NSString stringWithFormat:@"#include <metal_stdlib> \
-            using namespace metal; \
-            kernel void sqr( \
-                const device float *vIn [[ buffer(0) ]], \
-                device float *vOut [[ buffer(1) ]], \
-                uint id[[ thread_position_in_grid ]]) { \
-                    vOut[id] = vIn[id] * vIn[id]; \
-                } \
-            } \
-            "];
+    NSString* shadersSrc = [NSString stringWithCString:"#include <metal_stdlib> \n"
+                                                       "using namespace metal; \n"
+                                                       "kernel void sqr( \n"
+                                                       "const device float *vIn [[ buffer(0) ]],\n"
+                                                       "    device float *vOut [[ buffer(1) ]],\n"
+                                                       "    uint id[[ thread_position_in_grid ]]) {\n"
+                                                       "        vOut[id] = vIn[id] * vIn[id];\n"
+                                                       "}"
+    ];
 
+    std::cout << "Getting library file" << std::endl;
     auto library = [device newLibraryWithSource:shadersSrc options:[ MTLCompileOptions alloc ] error:nullptr];
+
+    std::cout << "Getting function file" << std::endl;
     auto sqrFunc = [library newFunctionWithName:@"sqr"];
+    assert(sqrFunc != nullptr);
 
     auto computePipelineState = [device newComputePipelineStateWithFunction:sqrFunc error:nullptr];
 
@@ -184,6 +187,11 @@ void TestMetal() {
     for (uint32_t j=0; j<dataCount; j++) {
         printf("sqr(%g) = %g\n", inData[j], outData[j]);
     }
+}
+
+int main() {
+    TestMetal();
+    return 0;
 }
 
 //__device__ Entry get_value(Entry entry) {
