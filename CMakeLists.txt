@@ -42,6 +42,9 @@ if (APPLE)
     find_library(CORE_FOUNDATION_LIBARY Foundation)
 
 #    set(CMAKE_CXX_FLAGS "-x objective-c++ -fobjc-link-runtime")
+#    xcrun metal -fcikernel src/CuckooCPU/example.metal -c -o src/CuckooCPU/MyLibrary.air
+#    xcrun metallib -cikernel src/CuckooCPU/MyLibrary.air -o src/CuckooCPU/MyKernels.metallib
+
 
     add_compile_options(cuckoo "-mmacosx-version-min=10.13,-fPIC,-ObjC++")
     add_link_options(cuckoo "-fobjc-link-runtime,-mmacosx-version-min=10.13,-fPIC")
