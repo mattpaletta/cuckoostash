@@ -5,7 +5,7 @@ project(CuckooStash CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(BUILD_PYTHON "Build Python SWIG module" ON)
+option(BUILD_PYTHON "Build Python SWIG module" OFF)
 
 include(cmake/pybind11.cmake)
 fetch_pybind(
@@ -30,7 +30,7 @@ if (BUILD_PYTHON)
     pybind11_add_module(cuckoo src/CuckooCPU/bindings.mm)
 else()
     add_library(cuckoo src/CuckooCPU/cuckoo.mm)
-    #    configure_file(${SOURCE_DIR}/CuckooCPU/example.metal ${CMAKE_BINARY_DIR}/example.metal COPYONLY)
+    configure_file(src/CuckooCPU/MyKernels.metallib ${CMAKE_BINARY_DIR}/MyKernels.metallib COPYONLY)
 endif()
 
 if (APPLE)
@@ -43,8 +43,8 @@ if (APPLE)
 
 #    set(CMAKE_CXX_FLAGS "-x objective-c++ -fobjc-link-runtime")
 
-    add_compile_options(cuckoo "-mmacosx-version-min=10.13,-fPIC")
-    add_link_options(cuckoo "-fobjc-link-runtime,-mmacosx-version-min=10.13,-fPIC,-ObjC++")
+    add_compile_options(cuckoo "-mmacosx-version-min=10.13,-fPIC,-ObjC++")
+    add_link_options(cuckoo "-fobjc-link-runtime,-mmacosx-version-min=10.13,-fPIC")
 
     SET(EXTRA_LIBS "${METAL_LIBRARY}" "${METALKIT_LIBRARY}" "${COCOA_LIBRARY}" "${CORE_FOUNDATION_LIBARY}")
     message(${EXTRA_LIBS})

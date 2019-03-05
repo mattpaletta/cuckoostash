@@ -139,8 +139,9 @@ void TestMetal() {
                                                        "}"
     ];
 
-    std::cout << "Getting library file" << std::endl;
-    auto library = [device newLibraryWithSource:shadersSrc options:[ MTLCompileOptions alloc ] error:nullptr];
+    std::cout << "Getting library file from file" << std::endl;
+//    auto library = [device newLibraryWithSource:shadersSrc options:[ MTLCompileOptions alloc ] error:nullptr];
+    auto library = [device newLibraryWithFile:@"/Users/matthew/Projects/cuckoostash/src/CuckooCPU/MyKernels.metallib" error:nullptr];
 
     std::cout << "Getting function file" << std::endl;
     auto sqrFunc = [library newFunctionWithName:@"sqr"];
