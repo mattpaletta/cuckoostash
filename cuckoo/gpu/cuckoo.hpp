@@ -1,7 +1,7 @@
 #ifndef CUCKOO_HPP
 #define CUCKOO_HPP
-#include <pybind11/pybind11.h>
-namespace py = pybind11;
+//#include <pybind11/pybind11.h>
+//namespace py = pybind11;
 
 typedef unsigned long long Entry;
 
