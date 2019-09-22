@@ -22,7 +22,6 @@ Cuckoo::Cuckoo(unsigned int N, int stash_size, int num_hash_functions) {
     this->cuckoo_values = {};
     this->stash_values = {};
 
-
     this->cuckoo_values.reserve(N);
     this->stash_values.reserve(max_stash_size);
 
@@ -39,7 +38,6 @@ Cuckoo::Cuckoo(unsigned int N, int stash_size, int num_hash_functions) {
 
 std::vector<std::function<unsigned long(Entry)>> Cuckoo::get_all_hash_tables(int table_size, int num_hash_functions) {
     const long p = 4294967291;
-
 
     std::vector<std::function<unsigned long(Entry)>> out_vector;
 
@@ -64,11 +62,11 @@ std::function<unsigned long(Entry)> Cuckoo::get_stash_function(int stash_size) {
 }
 
 std::function<unsigned long(Entry)> Cuckoo::get_next_hash_function(const long a, const long b, const long p, const long s_t, const std::string function) {
-    const auto linear_func = [&a, &b, &p, &s_t](Entry k) {
+    auto linear_func = [&a, &b, &p, &s_t](Entry k) {
         return (((a * k) + b) % p) % s_t;
     };
 
-    const auto xor_func = [&a, &b, &p, &s_t](Entry k) {
+    auto xor_func = [&a, &b, &p, &s_t](Entry k) {
         return (((a ^ k) + b) % p) % s_t;
     };
 
@@ -148,13 +146,11 @@ void TestMetal() {
     assert(sqrFunc != nullptr);
 
     auto computePipelineState = [device newComputePipelineStateWithFunction:sqrFunc error:nullptr];
-
     auto commandQueue = [device newCommandQueue];
 
     const uint32_t dataCount = 6;
 
     auto inBuffer = [device newBufferWithLength:sizeof(float) * dataCount options:MTLResourceStorageModeManaged];
-
     auto outBuffer = [device newBufferWithLength:sizeof(float) * dataCount options:MTLResourceStorageModeManaged];
 
     for (uint32_t i=0; i<4; i++) {

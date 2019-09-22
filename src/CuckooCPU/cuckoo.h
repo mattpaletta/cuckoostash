@@ -13,9 +13,7 @@ private:
     const Entry SLOT_EMPTY = 0xffffffff;
     const Entry KEY_EMPTY = SLOT_EMPTY;
 
-    int MAX_ITERATIONS;
     long max_size_chaining;
-
     std::vector<Entry> cuckoo_values;
     std::vector<Entry> stash_values;
 

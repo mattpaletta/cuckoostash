@@ -5,14 +5,3 @@
 #include <pybind11/pybind11.h>
 #include "cuckoo.h"
 #include "cuckoo.mm"
-
-namespace py = pybind11;
-
-PYBIND11_MODULE(cuckoo, m) {
-    py::class_<Cuckoo> cuckoo(m, "Cuckoo");
-            cuckoo.def(py::init<unsigned int, int, int>());
-    cuckoo.def("set", &Cuckoo::set);
-    cuckoo.def("get", &Cuckoo::get);
-
-    m.def("TestMetal", &TestMetal);
-}

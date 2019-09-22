@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/Users/matthew/Projects/cuckoostash/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -DNVALGRIND -I/Users/matthew/Projects/cuckoostash/. -I/Users/matthew/Projects/cuckoostash/build/pybind/pybind-src/include -I/usr/local/Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/include/python3.7m  -O3 -DNDEBUG   -fvisibility=hidden -std=gnu++1z -o CMakeFiles/cuckoo.dir/cuckoo/gpu/cuckoo.cpp.o -c /Users/matthew/Projects/cuckoostash/cuckoo/gpu/cuckoo.cpp",
+  "file": "/Users/matthew/Projects/cuckoostash/cuckoo/gpu/cuckoo.cpp"
+},
+{
+  "directory": "/Users/matthew/Projects/cuckoostash/build",
+  "command": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -DNVALGRIND -I/Users/matthew/Projects/cuckoostash/. -I/Users/matthew/Projects/cuckoostash/build/pybind/pybind-src/include -I/usr/local/Cellar/python/3.7.4/Frameworks/Python.framework/Versions/3.7/include/python3.7m  -O3 -DNDEBUG   -fvisibility=hidden -std=gnu++1z -o CMakeFiles/test_cuckoo.dir/app/test_cuckoo.cpp.o -c /Users/matthew/Projects/cuckoostash/app/test_cuckoo.cpp",
+  "file": "/Users/matthew/Projects/cuckoostash/app/test_cuckoo.cpp"
+}
+]

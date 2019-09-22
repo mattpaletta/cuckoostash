@@ -1,21 +1,9 @@
-#include "cuckoo.h"
-
-//#include "get_value.cu"
-
 #include <iostream>
 #include <memory>
 #include <cuda_runtime.h>
 #include <stdio.h>
 
-__global__ void setValue(float *data, int idx, float value) {
-    if (threadIdx.x == 0) {
-        data[idx] = value;
-    }
-}
-
-Cuckoo::Cuckoo () {}
-
-Cuckoo::~Cuckoo () {}
+#include "get_value.cu"
 
 // Run test on Cuda
 int Cuckoo::set() {
