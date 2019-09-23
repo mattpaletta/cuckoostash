@@ -1,7 +1,7 @@
 [
 {
   "directory": "/home/mpaletta/Projects/cuckoostash/build",
-  "command": "/usr/bin/c++  -DNVALGRIND -I/home/mpaletta/Projects/cuckoostash/. -isystem /usr/local/include  -O3 -DNDEBUG   -g -std=gnu++1z -o CMakeFiles/test_cuckoo.dir/app/test_cuckoo.cpp.o -c /home/mpaletta/Projects/cuckoostash/app/test_cuckoo.cpp",
+  "command": "/usr/bin/c++  -DNVALGRIND -I/home/mpaletta/Projects/cuckoostash/. -isystem /usr/local/include   -fsanitize=address -fsanitize=undefined -O3 -DNDEBUG   -g -std=gnu++1z -o CMakeFiles/test_cuckoo.dir/app/test_cuckoo.cpp.o -c /home/mpaletta/Projects/cuckoostash/app/test_cuckoo.cpp",
   "file": "/home/mpaletta/Projects/cuckoostash/app/test_cuckoo.cpp"
 },
 {

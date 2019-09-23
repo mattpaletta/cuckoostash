@@ -1,8 +1,8 @@
 #ifndef CUCKOO_HPP
 #define CUCKOO_HPP
+#include <iostream>
 //#include <pybind11/pybind11.h>
 //namespace py = pybind11;
-
 typedef unsigned long long Entry;
 
 // TODO:// Pass this in at compile_time
@@ -16,7 +16,8 @@ class Cuckoo {
 public:
 	Cuckoo();
 	~Cuckoo();
-	int set();
+	int set(std::size_t N, int* keys, int* values, int* results);
+	int* get(std::size_t N, int* keys, int* results);
 private:
 	Entry ccuckoo[CUCKOO_SIZE];
 	Entry cstash[STASH_SIZE];
