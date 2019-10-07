@@ -168,10 +168,14 @@ else()
 endif()
 # set_target_properties(cuckoolib PROPERTIES LINKER_LANGUAGE CXX)
 
-find_package(Catch2 REQUIRED)
+find_package(Catch2)
 
 add_executable(test_cuckoo app/test_cuckoo.cpp)
-target_link_libraries(test_cuckoo cuckoo Catch2::Catch2)
+if (Catch2_FOUND)
+	target_link_libraries(test_cuckoo cuckoo Catch2::Catch2)
+else()
+	target_link_libraries(test_cuckoo cuckoo)	
+endif()
 
 list(APPEND perf_targets test_cuckoo)
 #if (BUILD_PYTHON)
