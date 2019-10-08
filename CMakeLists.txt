@@ -17,6 +17,8 @@ if (APPLE)
    include(/Users/matthew/coriander/share/cocl/cocl.cmake)
 endif()
 
+option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
+
 option(ENABLE_COVERAGE "Enable coverage" OFF)
 option(ENABLE_ALL_SAN "Enable All Sanitizers" OFF)
 option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
@@ -156,6 +158,7 @@ if(ENABLE_GPERFTOOLS)
   set(OPTIONAL_LIBRARIES ${OPTIONAL_LIBRARIES} profiler)
 endif()
 
+find_package(Threads REQUIRED)
 
 include_directories(.)
 if (APPLE)
@@ -164,18 +167,14 @@ if (APPLE)
 else()
     add_library(cuckoo cuckoo/gpu/array.hpp cuckoo/gpu/cuckoo.hpp cuckoo/gpu/cuckoo.cu)
     # target_link_libraries(cuckoo pybind11::module)
-    target_link_libraries(cuckoo thread)
+    target_link_libraries(cuckoo Threads::Threads)
 endif()
 # set_target_properties(cuckoolib PROPERTIES LINKER_LANGUAGE CXX)
 
-find_package(Catch2)
+find_package(Catch2 CONFIG REQUIRED)
 
 add_executable(test_cuckoo app/test_cuckoo.cpp)
-if (Catch2_FOUND)
-	target_link_libraries(test_cuckoo cuckoo Catch2::Catch2)
-else()
-	target_link_libraries(test_cuckoo cuckoo)	
-endif()
+target_link_libraries(test_cuckoo cuckoo Catch2::Catch2 Threads::Threads)
 
 list(APPEND perf_targets test_cuckoo)
 #if (BUILD_PYTHON)
