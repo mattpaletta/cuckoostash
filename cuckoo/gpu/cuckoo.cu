@@ -5,6 +5,7 @@
 
 #include "array.hpp"
 #include "cuckoo.hpp"
+#include "pcg_random.hpp"
 
 __device__ Entry SLOT_EMPTY = (0xffffffff, 0);
 #define get_key(entry) ((unsigned)((entry) >> 32));
@@ -31,9 +32,12 @@ __device__ Entry get_value(Entry entry) {
     return ((unsigned)((entry) & SLOT_EMPTY));
 }
 
-__global__ void gpu_get(const int* keys, int* results) {
+__global__ void gpu_get(const int* keys, int* results, const std::size_t N) {
     const int thread_index = blockDim.x * blockIdx.x + threadIdx.x + threadIdx.y;
-    const int key = keys[thread_index];
+    if (thread_index > N) {
+		return;
+	}
+	const int key = keys[thread_index];
 
     const Entry kEntryNotFound = SLOT_EMPTY;
 
@@ -87,12 +91,11 @@ __global__ void gpu_get(const int* keys, int* results) {
     results[thread_index] = get_value(entry);
 }
 
-__global__ void gpu_set(int* keys, int* values, int* results) {
+__global__ void gpu_set(int* keys, int* values, int* results, const std::size_t N) {
     int thread_index = blockDim.x * blockIdx.x + threadIdx.x + threadIdx.y;
-    if (thread_index >= 3) {
+    if (thread_index > N) {
     	return;
     }
-    return;
     // Load up the key-value pair into a 64-bit entry
     unsigned key = keys[thread_index];
     unsigned value = values[thread_index];
@@ -141,7 +144,7 @@ Cuckoo::Cuckoo() {
 		this->cstash[i] = 0;
 	}
 
-	auto r1 = cudaMalloc((void **) &gcuckoo, CUCKOO_SIZE * sizeof(Entry));	
+	auto r1 = cudaMalloc((void **) &gcuckoo, CUCKOO_SIZE * sizeof(Entry));
 	auto r2 = cudaMalloc((void **) &gstash, STASH_SIZE * sizeof(Entry));
 	cudaMemcpy(gcuckoo, this->ccuckoo, CUCKOO_SIZE * sizeof(Entry), cudaMemcpyHostToDevice);
 	cudaMemcpy(gstash, this->cstash, CUCKOO_SIZE * sizeof(Entry), cudaMemcpyHostToDevice);
@@ -157,12 +160,12 @@ int Cuckoo::set(const std::size_t N, int* keys, int* values, int* results) {
        	GPUArray<int> g_values(values, N);
 	GPUArray<int> g_results(results, N);
 
-	std::cout << "Sending to GPU" << std::endl;	
+	std::cout << "Sending to GPU" << std::endl;
 	g_keys.to_gpu();
 	g_values.to_gpu();
 	g_results.to_gpu();
 	std::cout << "Running command on GPU" << std::endl;
-	gpu_set<<<1, 3>>>(g_keys.to_gpu(), g_values.to_gpu(), g_results.to_gpu());
+	gpu_set<<<N / 256, 256>>>(g_keys.to_gpu(), g_values.to_gpu(), g_results.to_gpu(), N);
 	//std::cout << &g_results.get_gpu()[0];
 	/*
 	for (std::size_t i = 0; i < N; ++i) {
@@ -178,7 +181,7 @@ int* Cuckoo::get(std::size_t N, int* keys, int* results) {
 	GPUArray<int> g_keys(keys, N);
 	GPUArray<int> g_results(results, N);
 
-	gpu_get<<<N / 256, 256>>>(g_keys.to_gpu(), g_results.to_gpu());
-	
+	gpu_get<<<N / 256, 256>>>(g_keys.to_gpu(), g_results.to_gpu(), N);
+
 	return g_results.get_gpu();
 }
