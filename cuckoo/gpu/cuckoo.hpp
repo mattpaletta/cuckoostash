@@ -23,6 +23,8 @@ private:
 	Entry cstash[STASH_SIZE];
 };
 
+bool add();
+
 /*
 PYBIND11_MODULE(example, m) {
     m.doc() = "pybind11 example plugin"; // optional module docstring

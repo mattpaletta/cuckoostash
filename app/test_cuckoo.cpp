@@ -41,16 +41,20 @@ bool is_same(std::size_t N, int* a, int* b) {
 	return is_same;
 }
 
+TEST_CASE("Test Add", "cuckoo") {
+	CHECK(add());
+}
+
 TEST_CASE("Test Creation", "cuckoo") {
 	auto c = Cuckoo();
 }
-/*
+
 TEST_CASE("Test Insertion", "cuckoo") {
 	int a[] = {1, 2, 3};
 	int b[] = {4, 5, 6};
 	int c[] = {7, 8, 9};
 	auto cuckoo = Cuckoo();
-	cuckoo.set(3, &a[0], &b[0], &c[0]);
+	CHECK(cuckoo.set(3, &a[0], &b[0], &c[0]) == 0);
 }
 
 TEST_CASE("Test Retreival", "cuckoo") {
@@ -62,4 +66,4 @@ TEST_CASE("Test Retreival", "cuckoo") {
 	cuckoo.set(3, &a[0], &b[0], &c[0]);
 	cuckoo.get(3, &a[0], &d[0]);
 	CHECK(is_same(3, &b[0], &d[0]));
-}*/
+}

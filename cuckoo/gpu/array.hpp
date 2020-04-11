@@ -14,8 +14,8 @@ public:
 
 	~GPUArray() {
 		cudaFree(this->gpu_data);
-		//delete[](this->gpu_data);
-		delete[](this->cpu_data);
+		// delete[](this->gpu_data);
+		// delete[](this->cpu_data);
 	}
 
 	T* get_cpu() {

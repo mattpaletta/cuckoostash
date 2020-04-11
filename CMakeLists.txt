@@ -40,13 +40,13 @@ option(ENABLE_GPERFTOOLS "enable the google performance tools" OFF)
 option(ENABLE_PGO "enable -fprofile-generate/-fprofile-use" OFF)
 option(ENABLE_LTO "enable -flto" OFF)
 
-option(BUILD_PYTHON "Build Python pybind module" ON)
+option(BUILD_PYTHON "Build Python pybind module" OFF)
 
-include(cmake/pybind11.cmake)
-fetch_pybind(
-        ${PROJECT_SOURCE_DIR}/cmake
-        ${PROJECT_BINARY_DIR}/pybind
-)
+# include(cmake/pybind11.cmake)
+#fetch_pybind(
+#        ${PROJECT_SOURCE_DIR}/cmake
+#        ${PROJECT_BINARY_DIR}/pybind
+#)
 
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE true)
 # Used to enable debugging (gdb)
