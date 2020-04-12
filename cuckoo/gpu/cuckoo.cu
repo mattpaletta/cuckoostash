@@ -68,7 +68,6 @@ __host__ bool add() {
 
 	// Verification
 	auto result = is_same(N, out, z);
-	printf("PASSED\n");
 
 	// Deallocate device memory
 	cudaFree(d_a);
@@ -80,6 +79,85 @@ __host__ bool add() {
 	free(b); 
 	free(out);
 	free(z);
+	return result;
+}
+
+__host__ bool add_new() {
+	constexpr auto N = 1<<20;
+	float *a = new float[N];
+	float *b = new float[N];
+	float *out = new float[N];
+	float *z = new float[N];
+	float *d_a, *d_b, *d_out; 
+
+	// Initialize host arrays
+	for(int i = 0; i < N; i++){
+		a[i] = 1.0f;
+		b[i] = 2.0f;
+		z[i] = a[i] + b[i];
+	}
+
+	// Allocate device memory 
+	cudaMalloc((void**)&d_a, sizeof(float) * N);
+	cudaMalloc((void**)&d_b, sizeof(float) * N);
+	cudaMalloc((void**)&d_out, sizeof(float) * N);
+
+	// Transfer data from host to device memory
+	cudaMemcpy(d_a, a, sizeof(float) * N, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_b, b, sizeof(float) * N, cudaMemcpyHostToDevice);
+
+
+	// Executing kernel 
+	int block_size = 256;
+	int grid_size = ((N + block_size) / block_size);
+	vector_add<<<grid_size,block_size>>>(d_out, d_a, d_b, N);
+
+	// Transfer data back to host memory
+	cudaMemcpy(out, d_out, sizeof(float) * N, cudaMemcpyDeviceToHost);
+
+	// Verification
+	auto result = is_same(N, out, z);
+
+	// Deallocate device memory
+	cudaFree(d_a);
+	cudaFree(d_b);
+	cudaFree(d_out);
+
+	// Deallocate host memory
+	delete[] a; 
+	delete[] b; 
+	delete[] out;
+	delete[] z;
+	return result;
+}
+
+__host__ bool add_array() {
+	constexpr auto N = 1<<20;
+	GPUArray<float> a(N);
+	GPUArray<float> b(N);
+	GPUArray<float> out(N);
+
+	float *z = new float[N];
+
+	// Initialize host arrays
+	for (int i = 0; i < N; i++){
+		a.get_cpu()[i] = 1.0f;
+		b.get_cpu()[i] = 2.0f;
+		z[i] = a.get_cpu()[i] + b.get_cpu()[i];
+	}
+	
+	// Executing kernel 
+	int block_size = 256;
+	int grid_size = ((N + block_size) / block_size);
+	a.to_gpu();
+	b.to_gpu();
+	out.to_gpu();
+	vector_add<<<grid_size, block_size>>>(out.to_gpu(), a.to_gpu(), b.to_gpu(), N);
+	
+	// Verification
+	auto result = is_same(N, out.get_gpu(), z);
+
+	delete[] z;
 	return result;
 }
 

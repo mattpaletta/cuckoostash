@@ -1,21 +1,27 @@
 #include <iostream>
 #include <cuda_runtime.h>
-template<class T = int>
+template<class T>
 class GPUArray {
 public:
-	GPUArray(T* data, const std::size_t N) {
-		this->cpu_data = data;
-		this->gpu_data = new T[N];
+	GPUArray(const std::size_t N) {
+		this->cpu_data = new T[N];
+		cudaMalloc((void**) &this->gpu_data, N * sizeof(T)); 
 		this->N = N;
 		this->gpu_is_updated = false;
 		this->cpu_is_updated = true;
-		cudaMalloc(&gpu_data, N * sizeof(T)); 
+	}
+
+	GPUArray(T* data, const std::size_t N) {
+		this->cpu_data = data;
+		cudaMalloc((void**) &this->gpu_data, N * sizeof(T)); 
+		this->N = N;
+		this->gpu_is_updated = false;
+		this->cpu_is_updated = true;
 	}
 
 	~GPUArray() {
 		cudaFree(this->gpu_data);
-		// delete[](this->gpu_data);
-		// delete[](this->cpu_data);
+		delete[] this->cpu_data;
 	}
 
 	T* get_cpu() {

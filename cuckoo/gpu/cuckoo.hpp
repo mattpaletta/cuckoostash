@@ -24,6 +24,8 @@ private:
 };
 
 bool add();
+bool add_array();
+bool add_new();
 
 /*
 PYBIND11_MODULE(example, m) {
