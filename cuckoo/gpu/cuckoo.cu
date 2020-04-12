@@ -11,13 +11,12 @@
 
 
 // Kernel function to add the elements of two arrays
-__global__ void add(const int n, const float *x, float *y) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
-    	for (int i = index; i < n; i += stride) {
-    		if (i < n) {
-        		y[i] = x[i] + y[i];
-    		}
+__global__ void vector_add(float *out, float *a, float *b, int n) {
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+	// Handling arbitrary vector size
+	if (tid < n) {
+		out[tid] = a[tid] + b[tid];
 	}
 }
 
@@ -32,45 +31,55 @@ bool is_same(std::size_t N, float* a, float* b) {
 }
 
 __host__ bool add() {
-	constexpr int N = 100;
-	float *x = new float[N];
-	float *y = new float[N];
+	constexpr auto N = 1<<20;
+	float *a, *b, *out, *z;
+	float *d_a, *d_b, *d_out; 
 	
-	std::vector<float> z;
+	// Allocate host memory
+	a   = (float*)malloc(sizeof(float) * N);
+	b   = (float*)malloc(sizeof(float) * N);
+	out = (float*)malloc(sizeof(float) * N);
+	z = (float*)malloc(sizeof(float) * N);
 
-	// Allocate Unified Memory – accessible from CPU or GPU
-	cudaMallocManaged(&x, N * sizeof(float));
-	cudaMallocManaged(&y, N * sizeof(float));
-	
-	// initialize x and y arrays on the host
-	for (int i = 0; i < N; ++i) {
-		const float x_val = 5.0f;
-		const float y_val = 2.0f + (float) i;
-		x[i] = x_val;
-		y[i] = y_val;
-		z.push_back(x_val + y_val);
+	// Initialize host arrays
+	for(int i = 0; i < N; i++){
+		a[i] = 1.0f;
+		b[i] = 2.0f;
+		z[i] = a[i] + b[i];
 	}
 
-	cudaMemcpy(dev_a, a, size * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_b, b, size * sizeof(int), cudaMemcpyHostToDevice);
+	// Allocate device memory 
+	cudaMalloc((void**)&d_a, sizeof(float) * N);
+	cudaMalloc((void**)&d_b, sizeof(float) * N);
+	cudaMalloc((void**)&d_out, sizeof(float) * N);
+
+	// Transfer data from host to device memory
+	cudaMemcpy(d_a, a, sizeof(float) * N, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_b, b, sizeof(float) * N, cudaMemcpyHostToDevice);
 
 
-	// Run kernel on 1M elements on the GPU
-	add<<<1, N/ 256>>>(N, x, y);
+	// Executing kernel 
+	int block_size = 256;
+	int grid_size = ((N + block_size) / block_size);
+	vector_add<<<grid_size,block_size>>>(d_out, d_a, d_b, N);
 
-    	// Wait for GPU to finish before accessing on host
-	cudaDeviceSynchronize();
-	
-	const bool result = is_same(N, &y[0], &z[0]);
-	for (int i = 0; i < N; ++i) {
-		std::cout << y[i] << ":" << z[i] << std::endl;
-	}
+	// Transfer data back to host memory
+	cudaMemcpy(out, d_out, sizeof(float) * N, cudaMemcpyDeviceToHost);
 
-	// Free memory
-	cudaFree(x);
-	cudaFree(y);
-	delete[] x;
-	delete[] y;
+	// Verification
+	auto result = is_same(N, out, z);
+	printf("PASSED\n");
+
+	// Deallocate device memory
+	cudaFree(d_a);
+	cudaFree(d_b);
+	cudaFree(d_out);
+
+	// Deallocate host memory
+	free(a); 
+	free(b); 
+	free(out);
+	free(z);
 	return result;
 }
 
