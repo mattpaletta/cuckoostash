@@ -1,5 +1,5 @@
-#ifndef CUCKOO_HPP
-#define CUCKOO_HPP
+#pragma once
+
 #include <iostream>
 //#include <pybind11/pybind11.h>
 //namespace py = pybind11;
@@ -16,11 +16,17 @@ class Cuckoo {
 public:
 	Cuckoo();
 	~Cuckoo();
-	int set(std::size_t N, int* keys, int* values, int* results);
-	int* get(std::size_t N, int* keys, int* results);
+	int set(const std::size_t N, int* keys, int* values, int* results);
+	int* get(const std::size_t N, int* keys, int* results);
 private:
 	Entry ccuckoo[CUCKOO_SIZE];
 	Entry cstash[STASH_SIZE];
+	int block_size() {
+		return 256;
+	}
+	int grid_size(const std::size_t N) {
+		return ((N + this->block_size()) / this->block_size());
+	}
 };
 
 bool add();
@@ -34,4 +40,3 @@ PYBIND11_MODULE(example, m) {
     m.def("add", &add, "A function which adds two numbers");
 }
 */
-#endif

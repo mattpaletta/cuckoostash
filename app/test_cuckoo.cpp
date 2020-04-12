@@ -53,7 +53,7 @@ TEST_CASE("Test Add Array", "cuckoo") {
 	CHECK(add_array());
 }
 
-/*
+
 TEST_CASE("Test Creation", "cuckoo") {
 	auto c = Cuckoo();
 }
@@ -65,7 +65,6 @@ TEST_CASE("Test Insertion", "cuckoo") {
 	auto cuckoo = Cuckoo();
 	CHECK(cuckoo.set(3, &a[0], &b[0], &c[0]) == 0);
 }
-
 TEST_CASE("Test Retreival", "cuckoo") {
 	int a[] = {1, 2, 3};
 	int b[] = {4, 5, 6};
@@ -75,4 +74,4 @@ TEST_CASE("Test Retreival", "cuckoo") {
 	cuckoo.set(3, &a[0], &b[0], &c[0]);
 	cuckoo.get(3, &a[0], &d[0]);
 	CHECK(is_same(3, &b[0], &d[0]));
-}*/
+}

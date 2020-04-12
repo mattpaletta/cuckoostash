@@ -9,6 +9,7 @@ public:
 		this->N = N;
 		this->gpu_is_updated = false;
 		this->cpu_is_updated = true;
+		this->cpu_array_owned = true;
 	}
 
 	GPUArray(T* data, const std::size_t N) {
@@ -17,11 +18,14 @@ public:
 		this->N = N;
 		this->gpu_is_updated = false;
 		this->cpu_is_updated = true;
+		this->cpu_array_owned = false;
 	}
 
 	~GPUArray() {
 		cudaFree(this->gpu_data);
-		delete[] this->cpu_data;
+		if (this->cpu_array_owned) {
+			delete[] this->cpu_data;
+		}
 	}
 
 	T* get_cpu() {
@@ -54,4 +58,5 @@ private:
 	std::size_t N;
 	T* cpu_data;
 	T* gpu_data;
+	bool cpu_array_owned;
 };
