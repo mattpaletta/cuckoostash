@@ -33,8 +33,8 @@ bool is_same(std::size_t N, float* a, float* b) {
 __host__ bool add() {
 	constexpr auto N = 1<<20;
 	float *a, *b, *out, *z;
-	float *d_a, *d_b, *d_out; 
-	
+	float *d_a, *d_b, *d_out;
+
 	// Allocate host memory
 	a   = (float*)malloc(sizeof(float) * N);
 	b   = (float*)malloc(sizeof(float) * N);
@@ -48,7 +48,7 @@ __host__ bool add() {
 		z[i] = a[i] + b[i];
 	}
 
-	// Allocate device memory 
+	// Allocate device memory
 	cudaMalloc((void**)&d_a, sizeof(float) * N);
 	cudaMalloc((void**)&d_b, sizeof(float) * N);
 	cudaMalloc((void**)&d_out, sizeof(float) * N);
@@ -58,7 +58,7 @@ __host__ bool add() {
 	cudaMemcpy(d_b, b, sizeof(float) * N, cudaMemcpyHostToDevice);
 
 
-	// Executing kernel 
+	// Executing kernel
 	int block_size = 256;
 	int grid_size = ((N + block_size) / block_size);
 	vector_add<<<grid_size,block_size>>>(d_out, d_a, d_b, N);
@@ -75,8 +75,8 @@ __host__ bool add() {
 	cudaFree(d_out);
 
 	// Deallocate host memory
-	free(a); 
-	free(b); 
+	free(a);
+	free(b);
 	free(out);
 	free(z);
 	return result;
@@ -88,7 +88,7 @@ __host__ bool add_new() {
 	float *b = new float[N];
 	float *out = new float[N];
 	float *z = new float[N];
-	float *d_a, *d_b, *d_out; 
+	float *d_a, *d_b, *d_out;
 
 	// Initialize host arrays
 	for(int i = 0; i < N; i++){
@@ -97,7 +97,7 @@ __host__ bool add_new() {
 		z[i] = a[i] + b[i];
 	}
 
-	// Allocate device memory 
+	// Allocate device memory
 	cudaMalloc((void**)&d_a, sizeof(float) * N);
 	cudaMalloc((void**)&d_b, sizeof(float) * N);
 	cudaMalloc((void**)&d_out, sizeof(float) * N);
@@ -107,7 +107,7 @@ __host__ bool add_new() {
 	cudaMemcpy(d_b, b, sizeof(float) * N, cudaMemcpyHostToDevice);
 
 
-	// Executing kernel 
+	// Executing kernel
 	int block_size = 256;
 	int grid_size = ((N + block_size) / block_size);
 	vector_add<<<grid_size,block_size>>>(d_out, d_a, d_b, N);
@@ -124,8 +124,8 @@ __host__ bool add_new() {
 	cudaFree(d_out);
 
 	// Deallocate host memory
-	delete[] a; 
-	delete[] b; 
+	delete[] a;
+	delete[] b;
 	delete[] out;
 	delete[] z;
 	return result;
@@ -145,15 +145,15 @@ __host__ bool add_array() {
 		b.get_cpu()[i] = 2.0f;
 		z[i] = a.get_cpu()[i] + b.get_cpu()[i];
 	}
-	
-	// Executing kernel 
+
+	// Executing kernel
 	int block_size = 256;
 	int grid_size = ((N + block_size) / block_size);
 	a.to_gpu();
 	b.to_gpu();
 	out.to_gpu();
 	vector_add<<<grid_size, block_size>>>(out.to_gpu(), a.to_gpu(), b.to_gpu(), N);
-	
+
 	// Verification
 	auto result = is_same(N, out.get_gpu(), z);
 
@@ -263,7 +263,7 @@ __global__ void gpu_set(int* keys, int* values, int* results, const std::size_t 
 
     for (int its = 0; its < MAX_ITERATIONS; its++) {
         // Insert the new item and check for an eviction
-        entry = atomicExch(&gstash[location], entry);
+        entry = atomicExch(&gcuckoo[location], entry);
         key = get_key(entry);
         if (key == SLOT_EMPTY) {
             results[thread_index] = key;
@@ -323,7 +323,7 @@ int Cuckoo::set(const std::size_t N, int* keys, int* values, int* results) {
 	g_results.to_gpu();
 	std::cout << "Running command on GPU" << std::endl;
 	gpu_set<<<this->grid_size(N), this->block_size()>>>(g_keys.to_gpu(), g_values.to_gpu(), g_results.to_gpu(), N);
-	
+
 	int count_failed = 0;
 	for (std::size_t i = 0; i < N; ++i) {
 		if (!(bool) (g_results.get_gpu() + i)) {
@@ -331,7 +331,7 @@ int Cuckoo::set(const std::size_t N, int* keys, int* values, int* results) {
 			count_failed++;
 		}
 	}
-	
+
 	return count_failed;
 }
 

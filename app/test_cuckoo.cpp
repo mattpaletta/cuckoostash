@@ -20,7 +20,7 @@ void print_array(std::size_t N, int* a) {
 		}
 	}
 	std::cout << "]" << std::endl;
-	
+
 }
 
 bool is_same(std::size_t N, int* a, int* b) {
@@ -30,14 +30,6 @@ bool is_same(std::size_t N, int* a, int* b) {
 			is_same = false;
 		}
 	}
-	std::cout << "a: ";
-	print_array(N, &a[0]);	
-	std::cout << std::endl;
-	
-	std::cout << "b: ";
-	print_array(N, &b[0]);	
-	std::cout << std::endl;
-	
 	return is_same;
 }
 

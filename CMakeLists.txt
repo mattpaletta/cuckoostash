@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(CuckooStash LANGUAGES CXX CUDA)
+project(CuckooStash LANGUAGES CXX)
 
 # set build type to release by default
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
@@ -158,14 +158,14 @@ if(ENABLE_GPERFTOOLS)
   set(OPTIONAL_LIBRARIES ${OPTIONAL_LIBRARIES} profiler)
 endif()
 
-find_package(Threads REQUIRED)
 
 include_directories(.)
 if (APPLE)
-    cocl_add_library(cuckoo cuckoo/gpu/array.hpp cuckoo/gpu/cuckoo.hpp cuckoo/gpu/cuckoo.cu)
-    target_link_libraries(cuckoo cocl clblast clew easycl pybind11::module)
+    add_library(cuckoo cuckoo/cpu/cuckoo.cpp)
 else()
-    add_library(cuckoo cuckoo/gpu/array.hpp cuckoo/gpu/cuckoo.hpp cuckoo/gpu/cuckoo.cu)
+	find_package(Threads REQUIRED)
+	find_package(CUDA)
+    cuda_add_library(cuckoo cuckoo/gpu/array.hpp cuckoo/gpu/cuckoo.hpp cuckoo/gpu/cuckoo.cu)
     # target_link_libraries(cuckoo pybind11::module)
     target_link_libraries(cuckoo Threads::Threads)
 endif()
@@ -174,7 +174,7 @@ endif()
 find_package(Catch2 CONFIG REQUIRED)
 
 add_executable(test_cuckoo app/test_cuckoo.cpp)
-target_link_libraries(test_cuckoo cuckoo Catch2::Catch2 Threads::Threads)
+target_link_libraries(test_cuckoo cuckoo Catch2::Catch2)
 
 list(APPEND perf_targets test_cuckoo)
 #if (BUILD_PYTHON)
