@@ -1,11 +1,12 @@
 #include <iostream>
 #include <cuda_runtime.h>
+
 template<class T>
 class GPUArray {
 public:
 	GPUArray(const std::size_t N) {
 		this->cpu_data = new T[N];
-		cudaMalloc((void**) &this->gpu_data, N * sizeof(T)); 
+		cudaMalloc((void**) &this->gpu_data, N * sizeof(T));
 		this->N = N;
 		this->gpu_is_updated = false;
 		this->cpu_is_updated = true;
@@ -14,7 +15,7 @@ public:
 
 	GPUArray(T* data, const std::size_t N) {
 		this->cpu_data = data;
-		cudaMalloc((void**) &this->gpu_data, N * sizeof(T)); 
+		cudaMalloc((void**) &this->gpu_data, N * sizeof(T));
 		this->N = N;
 		this->gpu_is_updated = false;
 		this->cpu_is_updated = true;

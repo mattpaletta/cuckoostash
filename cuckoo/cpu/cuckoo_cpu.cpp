@@ -1,19 +1,6 @@
 #include <cmath>
 #include <cuckoo/cuckoo.hpp>
 
-bool add() {
-	return true;
-}
-
-bool add_new() {
-	return true;
-}
-
-bool add_array() {
-	return true;
-}
-
-
 template<>
 Cuckoo<cuckoo::CpuBackend>::func_type Cuckoo<cuckoo::CpuBackend>::get_hash_function(const PCG::pcg32_random_t::result_type& a, const PCG::pcg32_random_t::result_type& b, const std::size_t& p, const std::size_t& stash_size, const FuncType& function) {
 	switch (function) {

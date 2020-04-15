@@ -1,12 +1,12 @@
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
+
 #include <cassert>
 #include <complex>
 #include <string>
 #include <iostream>
 #include <chrono>
 #include <future>
-#define CATCH_CONFIG_MAIN
-
-#include <catch2/catch.hpp>
 
 #include <cuckoo/cuckoo.hpp>
 
@@ -32,19 +32,6 @@ bool is_same(std::size_t N, int* a, int* b) {
 	}
 	return is_same;
 }
-
-TEST_CASE("Test Add", "cuckoo") {
-	CHECK(add());
-}
-
-TEST_CASE("Test Add New", "cuckoo") {
-	CHECK(add_new());
-}
-
-TEST_CASE("Test Add Array", "cuckoo") {
-	CHECK(add_array());
-}
-
 
 TEST_CASE("Test Creation", "cuckoo") {
 	auto c = Cuckoo<>();

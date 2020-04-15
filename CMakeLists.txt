@@ -40,17 +40,6 @@ option(ENABLE_GPERFTOOLS "enable the google performance tools" OFF)
 option(ENABLE_PGO "enable -fprofile-generate/-fprofile-use" OFF)
 option(ENABLE_LTO "enable -flto" OFF)
 
-option(BUILD_PYTHON "Build Python pybind module" OFF)
-
-# Not tested.
-if (BUILD_PYTHON)
-	include(cmake/pybind11.cmake)
-	fetch_pybind(
-			${PROJECT_SOURCE_DIR}/cmake
-			${PROJECT_BINARY_DIR}/pybind
-	)
-endif()
-
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE true)
 # Used to enable debugging (gdb)
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
@@ -164,10 +153,10 @@ endif()
 
 find_package(Threads REQUIRED)
 find_package(CUDA QUIET)
-set(BASE_SRC cuckoo/cpu/cuckoo.cpp cuckoo/cpu/cuckoo_any.cpp)
+set(BASE_SRC cuckoo/cpu/cuckoo_cpu.cpp cuckoo/cpu/cuckoo_any.cpp)
 if (Found_CUDA OR ENABLE_CUDA)
 	find_package(CUDA REQUIRED)
-	cuda_add_library(cuckoo cuckoo/gpu/array.hpp cuckoo/gpu/cuckoo_cuda.cu ${BASE_SRC})
+	cuda_add_library(cuckoo cuckoo/gpu/cuckoo_gpu.cpp ${BASE_SRC})
 # target_link_libraries(cuckoo pybind11::module)
 else()
 	message("Not Using CUDA (this is fine)")
