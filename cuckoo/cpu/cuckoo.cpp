@@ -1,5 +1,5 @@
 #include <cmath>
-#include "cuckoo/gpu/cuckoo.hpp"
+#include <cuckoo/cuckoo.hpp>
 
 bool add() {
 	return true;
@@ -13,7 +13,55 @@ bool add_array() {
 	return true;
 }
 
-Cuckoo::Cuckoo(const std::size_t N, const std::size_t stash_size, const std::size_t num_hash_functions) {
+
+template<>
+Cuckoo<cuckoo::CpuBackend>::func_type Cuckoo<cuckoo::CpuBackend>::get_hash_function(const PCG::pcg32_random_t::result_type& a, const PCG::pcg32_random_t::result_type& b, const std::size_t& p, const std::size_t& stash_size, const FuncType& function) {
+	switch (function) {
+	case FuncType::LINEAR:
+		return [a, b, p, stash_size](const Cuckoo::key_type& k) {
+			return ((((a * k) + b) % p) % stash_size);
+		};
+	case FuncType::XOR:
+		return [a, b, p, stash_size](const Cuckoo::key_type& k) {
+			return ((((a ^ k) + b) % p) % stash_size);
+		};
+
+	}
+}
+
+template<>
+std::vector<Cuckoo<cuckoo::CpuBackend>::func_type> Cuckoo<cuckoo::CpuBackend>::get_all_hash_functions(const std::size_t& full_table_size, const std::size_t& num_hash_functions) {
+	PCG::pcg32_random_t rand;
+	auto rand_range = [&rand](const std::size_t& min, const std::size_t& max) {
+		return (rand() % max) + min;
+	};
+	constexpr auto p = 4'294'967'291;
+	std::vector<Cuckoo::func_type> out;
+	for (std::size_t i = 0; i < num_hash_functions; ++i) {
+		const auto a = rand_range(1, p);
+		const auto b = rand_range(0, p);
+		out.emplace_back(this->get_hash_function(a, b, p, full_table_size, FuncType::XOR));
+	}
+
+	return out;
+}
+
+
+template<>
+Cuckoo<cuckoo::CpuBackend>::func_type Cuckoo<cuckoo::CpuBackend>::get_stash_function(const std::size_t& stash_size) {
+	PCG::pcg32_random_t rand;
+	auto rand_range = [&rand](const std::size_t& min, const std::size_t& max) {
+		return (rand() % max) + min;
+	};
+	constexpr std::size_t p = 334'214'459;
+	const auto a = rand_range(1, p);
+	const auto b = rand_range(0, p);
+
+	return this->get_hash_function(a, b, p, stash_size, FuncType::LINEAR);
+}
+
+template<>
+Cuckoo<cuckoo::CpuBackend>::Cuckoo(const std::size_t N, const std::size_t stash_size, const std::size_t num_hash_functions) {
 	assert(N > 0);
 	assert(num_hash_functions > 0);
 	assert(stash_size < N);
@@ -34,51 +82,13 @@ Cuckoo::Cuckoo(const std::size_t N, const std::size_t stash_size, const std::siz
 	}
 }
 
-Cuckoo::~Cuckoo() {}
+template<>
+Cuckoo<cuckoo::CpuBackend>::~Cuckoo() {}
 
-Cuckoo::func_type Cuckoo::get_hash_function(const PCG::pcg32_random_t::result_type& a, const PCG::pcg32_random_t::result_type& b, const std::size_t& p, const std::size_t& stash_size, const FuncType& function) {
-	switch (function) {
-	case FuncType::LINEAR:
-		return [a, b, p, stash_size](const Cuckoo::key_type& k) {
-			return ((((a * k) + b) % p) % stash_size);
-		};
-	case FuncType::XOR:
-		return [a, b, p, stash_size](const Cuckoo::key_type& k) {
-			return ((((a ^ k) + b) % p) % stash_size);
-		};
 
-	}
-}
 
-std::vector<Cuckoo::func_type> Cuckoo::get_all_hash_functions(const std::size_t& full_table_size, const std::size_t& num_hash_functions) {
-	PCG::pcg32_random_t rand;
-	auto rand_range = [&rand](const std::size_t& min, const std::size_t& max) {
-		return (rand() % max) + min;
-	};
-	constexpr auto p = 4'294'967'291;
-	std::vector<Cuckoo::func_type> out;
-	for (std::size_t i = 0; i < num_hash_functions; ++i) {
-		const auto a = rand_range(1, p);
-		const auto b = rand_range(0, p);
-		out.emplace_back(this->get_hash_function(a, b, p, full_table_size, FuncType::XOR));
-	}
-
-	return out;
-}
-
-Cuckoo::func_type Cuckoo::get_stash_function(const std::size_t& stash_size) {
-	PCG::pcg32_random_t rand;
-	auto rand_range = [&rand](const std::size_t& min, const std::size_t& max) {
-		return (rand() % max) + min;
-	};
-	constexpr std::size_t p = 334'214'459;
-	const auto a = rand_range(1, p);
-	const auto b = rand_range(0, p);
-
-	return this->get_hash_function(a, b, p, stash_size, FuncType::LINEAR);
-}
-
-void Cuckoo::get(const std::size_t& N, int* keys, int* results) {
+template<>
+void Cuckoo<cuckoo::CpuBackend>::get(const std::size_t& N, int* keys, int* results) {
 	auto get_item = [this, &N](const Cuckoo::key_type& key) {
 		constexpr Entry kEntryNotFound = 0;
 		auto entry = this->ccuckoo[this->hash_functions[0](key)];
@@ -108,7 +118,8 @@ void Cuckoo::get(const std::size_t& N, int* keys, int* results) {
 	}
 }
 
-int Cuckoo::set(const std::size_t& N, int* keys, int* values, int* results) {
+template<>
+int Cuckoo<cuckoo::CpuBackend>::set(const std::size_t& N, int* keys, int* values, int* results) {
 	auto set_item = [this, &N](const Cuckoo::key_type& key, const Cuckoo::value_type& value) {
 		auto swap = [this](const std::size_t& location, const Cuckoo::key_type& entry) {
 			const auto curr_item = this->ccuckoo[location];

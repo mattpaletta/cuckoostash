@@ -10,12 +10,12 @@ if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Release" AND NOT ${CMAKE_BUILD_TYPE} STREQU
   message(FATAL_ERROR "CMAKE_BUILD_TYPE must be set to Release or Debug")
 endif()
 
+# CUDA only supports 14 :(
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (APPLE)
-   include(/Users/matthew/coriander/share/cocl/cocl.cmake)
-endif()
+option(ENABLE_CUDA "enable cuda support (if found)" OFF)
+option(ENABLE_TESTS "enable unit tests" ON)
 
 option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
 
@@ -42,11 +42,14 @@ option(ENABLE_LTO "enable -flto" OFF)
 
 option(BUILD_PYTHON "Build Python pybind module" OFF)
 
-# include(cmake/pybind11.cmake)
-#fetch_pybind(
-#        ${PROJECT_SOURCE_DIR}/cmake
-#        ${PROJECT_BINARY_DIR}/pybind
-#)
+# Not tested.
+if (BUILD_PYTHON)
+	include(cmake/pybind11.cmake)
+	fetch_pybind(
+			${PROJECT_SOURCE_DIR}/cmake
+			${PROJECT_BINARY_DIR}/pybind
+	)
+endif()
 
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE true)
 # Used to enable debugging (gdb)
@@ -159,24 +162,29 @@ if(ENABLE_GPERFTOOLS)
 endif()
 
 
-include_directories(.)
-if (APPLE)
-    add_library(cuckoo cuckoo/cpu/cuckoo.cpp)
+find_package(Threads REQUIRED)
+find_package(CUDA QUIET)
+set(BASE_SRC cuckoo/cpu/cuckoo.cpp cuckoo/cpu/cuckoo_any.cpp)
+if (Found_CUDA OR ENABLE_CUDA)
+	find_package(CUDA REQUIRED)
+	cuda_add_library(cuckoo cuckoo/gpu/array.hpp cuckoo/gpu/cuckoo_cuda.cu ${BASE_SRC})
+# target_link_libraries(cuckoo pybind11::module)
 else()
-	find_package(Threads REQUIRED)
-	find_package(CUDA)
-    cuda_add_library(cuckoo cuckoo/gpu/array.hpp cuckoo/gpu/cuckoo.hpp cuckoo/gpu/cuckoo.cu)
-    # target_link_libraries(cuckoo pybind11::module)
-    target_link_libraries(cuckoo Threads::Threads)
+	message("Not Using CUDA (this is fine)")
+	add_library(cuckoo ${BASE_SRC})
 endif()
-# set_target_properties(cuckoolib PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(cuckoo PUBLIC include)
+target_link_libraries(cuckoo Threads::Threads)
 
-find_package(Catch2 CONFIG REQUIRED)
 
-add_executable(test_cuckoo app/test_cuckoo.cpp)
-target_link_libraries(test_cuckoo cuckoo Catch2::Catch2)
+if (ENABLE_TESTS)
+	find_package(Catch2 CONFIG REQUIRED)
+	add_executable(test_cuckoo app/test_cuckoo.cpp)
+	target_include_directories(test_cuckoo PUBLIC include)
+	target_link_libraries(test_cuckoo cuckoo Catch2::Catch2)
 
-list(APPEND perf_targets test_cuckoo)
+	list(APPEND perf_targets test_cuckoo)
+endif()
 #if (BUILD_PYTHON)
 #    add_library(cuckoo src/CuckooGPU/cuckoo.hpp)
 #	target_link_libraries(cuckoo pybind11::module cuckoolib)
