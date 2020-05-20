@@ -9,4 +9,14 @@ public:
 
 	int set(const std::size_t& N, int* keys, int* values, int* results) override;
 	void get(const std::size_t& N, int* keys, int* results) override;
+
+private:
+	int static block_size() {
+		return 256;
+	}
+
+	int static grid_size(const std::size_t& N) {
+		const block_size = Cuckoo<cuckoo::CudaBackend>::block_size();
+		return ((N + block_size) / block_size);
+	}
 };
