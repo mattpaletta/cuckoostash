@@ -10,7 +10,7 @@
 
 #include <cuckoo/cuckoo.hpp>
 
-void print_array(std::size_t N, int* a) {
+void print_array(const std::size_t& N, const int* a) {
 	std::cout << "[";
 	for (std::size_t i = 0; i < N; ++i) {
 		if (i == N - 1) {
@@ -20,15 +20,18 @@ void print_array(std::size_t N, int* a) {
 		}
 	}
 	std::cout << "]" << std::endl;
-
 }
 
-bool is_same(std::size_t N, int* a, int* b) {
+bool is_same(const std::size_t& N, const int* a, const int* b) {
 	bool is_same = true;
 	for (std::size_t i = 0; i < N; ++i) {
 		if (a[i] != b[i]) {
 			is_same = false;
 		}
+	}
+	if (!is_same) {
+		print_array(N, a);
+		print_array(N, b);
 	}
 	return is_same;
 }
@@ -40,17 +43,17 @@ TEST_CASE("Test Creation", "cuckoo") {
 TEST_CASE("Test Insertion", "cuckoo") {
 	int a[] = {1, 2, 3};
 	int b[] = {4, 5, 6};
-	int c[] = {7, 8, 9};
+	int c[] = {0, 0, 0};
 	auto cuckoo = Cuckoo<>();
 	CHECK(cuckoo.set(3, &a[0], &b[0], &c[0]) == 0);
 }
 TEST_CASE("Test Retreival", "cuckoo") {
 	int a[] = {1, 2, 3};
 	int b[] = {4, 5, 6};
-	int c[] = {7, 8, 9};
+	int c[] = {0, 0, 0};
 	int d[] = {0, 0, 0};
 	auto cuckoo = Cuckoo<>();
-	cuckoo.set(3, &a[0], &b[0], &c[0]);
+	CHECK(cuckoo.set(3, &a[0], &b[0], &c[0]) == 0);
 	cuckoo.get(3, &a[0], &d[0]);
 	CHECK(is_same(3, &b[0], &d[0]));
 }

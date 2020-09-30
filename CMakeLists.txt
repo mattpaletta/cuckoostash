@@ -14,7 +14,7 @@ endif()
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(ENABLE_CUDA "enable cuda support (if found)" OFF)
+option(ENABLE_CUDA "enable cuda support (if found)" ON)
 option(ENABLE_TESTS "enable unit tests" ON)
 
 option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
@@ -152,11 +152,10 @@ endif()
 
 
 find_package(Threads REQUIRED)
-find_package(CUDA QUIET)
 set(BASE_SRC cuckoo/cpu/cuckoo_cpu.cpp cuckoo/cpu/cuckoo_any.cpp)
-if (Found_CUDA OR ENABLE_CUDA)
+if (ENABLE_CUDA)
 	find_package(CUDA REQUIRED)
-	cuda_add_library(cuckoo cuckoo/gpu/cuckoo_gpu.cpp ${BASE_SRC})
+	cuda_add_library(cuckoo cuckoo/gpu/cuckoo_gpu.cu ${BASE_SRC})
 # target_link_libraries(cuckoo pybind11::module)
 else()
 	message("Not Using CUDA (this is fine)")
